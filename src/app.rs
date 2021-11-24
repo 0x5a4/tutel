@@ -42,6 +42,7 @@ pub fn run() -> Result<()> {
                 .arg(
                     Arg::with_name("nonav")
                         .help("dont make this project reachable via tutelnav")
+                        .long("nonav")
                         .takes_value(false),
                 ),
         )
