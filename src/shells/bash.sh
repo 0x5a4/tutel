@@ -2,7 +2,7 @@
 # eval "$(tutel init bash)" 
 
 function tutelnav() {
-  out=$(./tutel query $1)
+  out=$(tutel query $1)
   if [ $? != 0 ]; then 
     return $?
   fi
