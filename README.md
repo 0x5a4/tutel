@@ -1,8 +1,5 @@
 # tutel
-Most people organize their projects in folders. If something doesnt fit in a single file they make a subfolder.
-And thats how tutel is organized as well! Run ``tutel new`` in a directory and it becomes a project.
-You can now add tasks to this project, mark them as being done and so forth. If something is so complex
-you feel like you could use some sort of category, just make a subfolder. 
+small todo app. someday ill make an actual readme
 
 # tutelnav
 *a little bonus*

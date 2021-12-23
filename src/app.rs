@@ -13,22 +13,36 @@ pub fn run() -> Result<()> {
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .subcommand(
-            SubCommand::with_name("init")
-                .about("prints the shell functions necessary for tutelnav")
-                .arg(Arg::with_name("shell")
-                    .help("the shell to use")
-                    .index(1)
-                    .required(true)
-                    .possible_values(&["fish", "bash"])
-                ),
-        )
-        .subcommand(
-            SubCommand::with_name("query")
-                .about("query a project location from its name")
-                .arg(Arg::with_name("name")
-                    .help("the project name")
-                    .index(1)
-                    .required(true)
+            SubCommand::with_name("nav")
+                .about("commands for working with tutelnav")
+                .arg(Arg::with_name("keep-perms")
+                    .help("do not attempt to drop privileges(useful for sudo)")
+                    .long("keep-perms")
+                    .short("K")
+                    .takes_value(false)
+                )
+                .subcommand(
+                    SubCommand::with_name("init")
+                        .about("prints the shell functions necessary for tutelnav")
+                        .arg(Arg::with_name("shell")
+                            .help("the shell to use")
+                            .index(1)
+                        .required(true)
+                        .possible_values(&["fish", "bash"])
+                    ),
+                )
+                .subcommand(
+                    SubCommand::with_name("query")
+                        .about("query a project location from its name")
+                        .arg(Arg::with_name("name")
+                        .help("the project name")
+                        .index(1)
+                        .required(true)
+                    )
+                )
+                .subcommand(
+                    SubCommand::with_name("track")
+                        .about("add an existing project to tutelnav")
                 )
         )
         .subcommand(
@@ -44,6 +58,13 @@ pub fn run() -> Result<()> {
                         .help("dont make this project reachable via tutelnav")
                         .long("nonav")
                         .takes_value(false),
+                )
+                .arg(
+                    Arg::with_name("keep-perms")
+                        .help("do not attempt to drop privileges")
+                        .short("K")
+                        .long("keep-perms")
+                        .takes_value(false)
                 ),
         )
         .subcommand(
@@ -90,13 +111,23 @@ pub fn run() -> Result<()> {
 
     //Run Commands
     match matches.subcommand() {
-        ("init", Some(m)) => {
-            let shell = m.value_of("shell").unwrap();
-            nav::init(shell)?;
+        ("nav", Some(m)) => {
+            if !m.is_present("keep-perms") {
+                drop_privilege()?;
+            }
+            match m.subcommand() {
+                ("init", Some(m)) => nav::init(m.value_of("shell").unwrap())?,
+                ("query", Some(m)) => println!("{}", nav::query_nav(m.value_of("name").unwrap())?.display()),
+                ("track", _) => {
+                    let p = load_project(&*std::env::current_dir()?)?;
+                    nav::add_to_nav(p.name(), p.path.as_path())?;
+                }
+                (&_, _) => {}
+            }
         }
         ("new", Some(m)) => {
             let name = m.value_of("name").unwrap();
-            new_project(name, &*std::env::current_dir()?, !m.is_present("nonav"))?;
+            new_project(name, &*std::env::current_dir()?, !m.is_present("nonav"), !m.is_present("keep-perms"))?;
         }
         ("add", Some(m)) => {
             let mut p = load_project_rec(&*std::env::current_dir()?)?;
@@ -124,9 +155,6 @@ pub fn run() -> Result<()> {
             p.remove(index)?;
             p.save()?;
         }
-        ("query", Some(m)) => {
-            println!("{}", nav::query_nav(m.value_of("name").unwrap())?.display());
-        }
         (_, _) => {
             let p = load_project_rec(&*std::env::current_dir()?)?;
             println!("{}", p);
@@ -148,7 +176,7 @@ fn has_project(path: &Path) -> bool {
 fn load_project(path: &Path) -> Result<Project> {
     let project_path = path.join(PROJECT_FILE_NAME);
 
-    let meta = project_path.metadata()?;
+    let meta = project_path.metadata().context("no project found")?;
 
     let file_content =
         fs::read_to_string(project_path.as_path()).context("unable to read project file")?;
@@ -175,7 +203,7 @@ fn load_project_rec(path: &Path) -> Result<Project> {
 }
 
 //Creates a new project and adds it to the project list
-fn new_project(name: &str, path: &Path, nav: bool) -> Result<()> {
+fn new_project(name: &str, path: &Path, nav: bool, drop_perms: bool) -> Result<()> {
     if name.contains(" ") {
         bail!("name cannot contain whitespaces");
     }
@@ -189,8 +217,35 @@ fn new_project(name: &str, path: &Path, nav: bool) -> Result<()> {
     fs::write(new, toml::to_string_pretty(&project)?)?;
 
     if nav {
+        if drop_perms {
+            drop_privilege()?;
+        }
         nav::add_to_nav(name, path)?;
     }
 
     Ok(())
+}
+
+
+fn drop_privilege() -> Result<()> {
+    unsafe {
+        let logname_ptr: *const libc::c_char = libc::getlogin();
+        if logname_ptr.is_null() {
+            bail!("unable to drop privileges. not writing to tutelnav");
+        }
+
+        let pw_ptr = libc::getpwnam(logname_ptr);
+        if pw_ptr.is_null() {
+            return Err(std::io::Error::last_os_error().into())
+        }
+
+        let uid = (&*pw_ptr).pw_uid;
+
+        return if let 0 = libc::setuid(uid) {
+            Ok(())
+        } else {
+            Err(std::io::Error::last_os_error().into())
+        }
+
+    }
 }

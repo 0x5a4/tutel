@@ -62,6 +62,10 @@ impl Project {
         self.data.tasks[index].completed = completed;
         Ok(())
     }
+
+    pub fn name<'a>(&'a self) -> &'a str {
+        self.data.name.as_str()
+    }
 }
 
 impl Display for Project {

@@ -52,6 +52,8 @@ pub fn query_nav(name: &str) -> Result<PathBuf> {
     bail!("no project found with name {}", name);
 }
 
+/// Tries to find the line starting with the given name. 
+/// If found, returns the index of the line and the line itself
 fn find_entry(name: &str, lines: Lines) -> Option<(usize, String)> {
     for (i, e) in lines.enumerate() {
         let mut tmp = String::from(name);
@@ -93,8 +95,15 @@ pub fn add_to_nav(name: &str, path: &Path) -> Result<()> {
         .append(true)
         .open(cache_path)
         .context("unable to open tutelnav file")?;
+    
+    let mut contents = String::new();
+    cache_file.read_to_string(&mut contents).context("unable to read tutelnav file")?;
 
-    write!(cache_file, "{} {}\n", name, path.display())?;
+    if let None = find_entry(name, contents.lines()) {
+        cache_file.write_fmt(format_args!("{} {}\n", name, path.display()))?;
+    } else {
+        bail!("project with name {} already exists", name);
+    }
 
     Ok(())
 }
