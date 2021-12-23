@@ -1,3 +1,4 @@
 /target
 .tutel.toml
 Cargo.lock
+/aur
