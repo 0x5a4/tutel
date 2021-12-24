@@ -76,7 +76,7 @@ fn delete_entry(line_number: usize, content: &str, file: &mut File) -> Result<()
             continue;
         }
 
-        write!(file, "{}\n", s)?;
+        writeln!(file, "{}", s)?;
     }
 
     Ok(())
@@ -101,7 +101,7 @@ pub fn add_to_nav(name: &str, path: &Path) -> Result<()> {
     let mut contents = String::new();
     cache_file.read_to_string(&mut contents).context("unable to read tutelnav file")?;
 
-    if let None = find_entry(name, contents.lines()) {
+    if find_entry(name, contents.lines()).is_none() {
         cache_file.write_fmt(format_args!("{} {}\n", name, path.display()))?;
     } else {
         bail!("project with name {} already exists", name);

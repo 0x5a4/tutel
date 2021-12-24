@@ -1,3 +1,4 @@
+#![allow(clippy::needless_return)]
 use ansi_term::Color;
 
 mod app;

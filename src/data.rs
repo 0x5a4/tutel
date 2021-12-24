@@ -7,6 +7,8 @@ use std::{
     path::PathBuf,
 };
 
+use crate::app;
+
 #[derive(Debug)]
 pub struct Project {
     pub readonly: bool,
@@ -28,7 +30,8 @@ impl Project {
             bail!("project is readonly");
         }
         let serialized = toml::to_string_pretty(&self.data)?;
-        fs::write(&self.path, serialized)?;
+        let target = self.path.join(app::PROJECT_FILE_NAME);
+        fs::write(target, serialized)?;
         Ok(())
     }
 
@@ -63,7 +66,7 @@ impl Project {
         Ok(())
     }
 
-    pub fn name<'a>(&'a self) -> &'a str {
+    pub fn name(&self) -> &str {
         self.data.name.as_str()
     }
 }

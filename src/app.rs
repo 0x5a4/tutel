@@ -74,6 +74,8 @@ pub fn run() -> Result<()> {
                     .help("the task name to add")
                     .index(1)
                     .required(true)
+                    .multiple(true)
+                    .min_values(1)
                 )
                 .arg(
                     Arg::with_name("completed")
@@ -131,7 +133,18 @@ pub fn run() -> Result<()> {
         }
         ("add", Some(m)) => {
             let mut p = load_project_rec(&*std::env::current_dir()?)?;
-            let task = Task::new(m.value_of("task").unwrap(), m.is_present("completed"));
+            let mut taskname = String::new();
+            let values = m.values_of("task").unwrap();
+            let vlen = values.len();
+            
+            for (i, s) in values.enumerate() {
+                taskname.push_str(s);
+                if i < vlen - 1 {
+                    taskname.push(' ');
+                }
+            }
+
+            let task = Task::new(taskname, m.is_present("completed"));
             p.add(task)?;
             p.save()?;
         }
@@ -195,7 +208,7 @@ fn load_project(path: &Path) -> Result<Project> {
 fn load_project_rec(path: &Path) -> Result<Project> {
     for p in path.ancestors() {
         if has_project(p) {
-            return Ok(load_project(p)?);
+            return load_project(p);
         }
     }
 
@@ -204,7 +217,7 @@ fn load_project_rec(path: &Path) -> Result<Project> {
 
 //Creates a new project and adds it to the project list
 fn new_project(name: &str, path: &Path, nav: bool, drop_perms: bool) -> Result<()> {
-    if name.contains(" ") {
+    if name.contains(' ') {
         bail!("name cannot contain whitespaces");
     }
 
@@ -240,7 +253,7 @@ fn drop_privilege() -> Result<()> {
             return Err(std::io::Error::last_os_error().into())
         }
 
-        let uid = (&*pw_ptr).pw_uid;
+        let uid = (*pw_ptr).pw_uid;
 
         return if let 0 = libc::setuid(uid) {
             Ok(())
