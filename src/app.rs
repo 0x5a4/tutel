@@ -185,7 +185,7 @@ fn load_project(path: &Path) -> Result<Project> {
         toml::from_str(file_content.as_str()).context("invalid project file syntax")?;
 
     Ok(Project::new(
-        project_path,
+        path.to_path_buf(),
         meta.permissions().readonly(),
         project_data,
     ))
