@@ -227,6 +227,7 @@ fn new_project(name: &str, path: &Path, nav: bool, drop_perms: bool) -> Result<(
 }
 
 
+/// try to drop privileges using getlogin()
 fn drop_privilege() -> Result<()> {
     unsafe {
         let logname_ptr: *const libc::c_char = libc::getlogin();

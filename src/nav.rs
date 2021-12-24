@@ -9,7 +9,7 @@ use std::str::Lines;
 /// Search the tutelnav database for a project with the specified name and return its path
 pub fn query_nav(name: &str) -> Result<PathBuf> {
     let cache_path = if let Some(dirs) = BaseDirs::new() {
-        dirs.cache_dir().join("tutelnav")
+        dirs.data_dir().join("tutelnav")
     } else {
         bail!("unable to retrieve home dir");
     };
@@ -66,6 +66,8 @@ fn find_entry(name: &str, lines: Lines) -> Option<(usize, String)> {
     None
 }
 
+
+/// deletes the given line from content and changes to file
 fn delete_entry(line_number: usize, content: &str, file: &mut File) -> Result<()> {
     let lines: Vec<&str> = content.lines().collect();
     file.set_len(0)?;
@@ -84,7 +86,7 @@ fn delete_entry(line_number: usize, content: &str, file: &mut File) -> Result<()
 /// Each entry has its own line and is in the format "{name} {path}"
 pub fn add_to_nav(name: &str, path: &Path) -> Result<()> {
     let cache_path = if let Some(dirs) = BaseDirs::new() {
-        dirs.cache_dir().join("tutelnav")
+        dirs.data_dir().join("tutelnav")
     } else {
         bail!("unable to retrieve home dir");
     };

@@ -1,8 +1,8 @@
 [package]
 name = "tutel"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2018"
-description = "a minimalist todo app"
+description = "a minimalist todo app for terminal enthusiasts"
 authors = ["arthur"]
 homepage = "https://www.github.com/InvalidName662/tutel"
 repository = "https://www.github.com/InvalidName662/tutel"
