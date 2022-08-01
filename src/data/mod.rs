@@ -1,11 +1,13 @@
 use ansi_term::Color;
 use anyhow::{bail, Result};
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::{
     fmt::{Display, Write},
     path::PathBuf,
 };
+
+mod ser;
+mod de;
 
 #[derive(Debug)]
 pub struct Project {
@@ -29,7 +31,7 @@ impl Project {
     pub fn get_task_mut(&mut self, index: u8) -> Result<&mut Task> {
         for t in &mut self.data.tasks {
             if t.index == index {
-                return Ok(t)
+                return Ok(t);
             }
         }
         bail!("no such task with index: {index}")
@@ -68,7 +70,7 @@ impl Project {
         bail!("no such task with such index: {index}")
     }
 
-    /// Calculates the next highest unused index. 
+    /// Calculates the next highest unused index.
     ///
     /// Wraps around to 0 after 255 is reached.
     pub fn next_index(&self) -> u8 {
@@ -120,7 +122,8 @@ impl Display for Project {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+/// The part of a project that needs to be saved/loaded
+#[derive(Debug)]
 pub struct ProjectData {
     name: String,
     tasks: Vec<Task>,
@@ -136,7 +139,7 @@ impl ProjectData {
 }
 
 /// A completable Task within a Project
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct Task {
     pub name: String,
     pub completed: bool,
