@@ -8,6 +8,14 @@ homepage = "https://www.github.com/InvalidName662/tutel"
 repository = "https://www.github.com/InvalidName662/tutel"
 license = "MIT"
 
+[lib]
+name = "tutel"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tutel"
+path = "src/main.rs"
+
 [dependencies]
 anyhow = "1.0.45"
 clap = "3.2.15"

@@ -1,19 +1,16 @@
 #![warn(clippy::perf)]
 #![warn(clippy::style)]
 #![warn(clippy::nursery)]
-use std::path::Path;
+
 use std::{fs, io::Write};
 use tempfile::NamedTempFile;
 
 use ansi_term::Color;
 use anyhow::{bail, Context, Result};
-use clap::App;
-use data::{Project, ProjectData, Task};
+use clap::{App, ArgMatches};
 
 mod app;
-mod data;
 
-const PROJECT_FILE_NAME: &str = ".tutel.toml";
 const BASH_COMPLETIONS: &str = include_str!(concat!(env!("OUT_DIR"), "/tutel.bash"));
 const ZSH_COMPLETIONS: &str = include_str!(concat!(env!("OUT_DIR"), "/_tutel"));
 const FISH_COMPLETIONS: &str = include_str!(concat!(env!("OUT_DIR"), "/tutel.fish"));
@@ -40,76 +37,14 @@ fn run_app(app: App) -> Result<()> {
 
     //Run Commands
     match matches.subcommand() {
-        Some(("new", m)) => {
-            let name = m.value_of("name");
-            let force = m.is_present("force");
-            new_project(name, &*std::env::current_dir()?, force)?;
-        }
-        Some(("add", m)) => {
-            let mut p = load_project_rec(&*std::env::current_dir()?)?;
-            let mut taskname = String::new();
-            let values = m.values_of("taskname").unwrap();
-            let vlen = values.len();
-
-            for (i, s) in values.enumerate() {
-                taskname.push_str(s);
-                if i < vlen - 1 {
-                    taskname.push(' ');
-                }
-            }
-
-            let task = Task::new(taskname, m.is_present("completed"), p.next_index());
-            p.add(task);
-            p.save()?;
-        }
-        Some(("done", m)) => {
-            let mut p = load_project_rec(&*std::env::current_dir()?)?;
-            let completed = !m.is_present("not");
-
-            if m.is_present("all") {
-                p.mark_completion_all(completed)
-            } else {
-                let indices = m
-                    .values_of("indices")
-                    .unwrap()
-                    .map(|index| index.parse::<u8>().context("invalid index: {index}"))
-                    .collect::<Vec<_>>();
-
-                for index in indices {
-                    p.mark_completion(index?, !m.is_present("not"))?;
-                }
-            }
-
-            p.save()?;
-        }
-        Some(("rm", m)) => {
-            let mut p = load_project_rec(&*std::env::current_dir()?)?;
-
-            if m.is_present("all") {
-                p.remove_all();
-            } else if m.is_present("cleanup") {
-                p.remove_completed()
-            } else {
-                let indices = m
-                    .values_of("indices")
-                    .unwrap()
-                    .map(|index| index.parse::<u8>().context("invalid index: {index}"))
-                    .collect::<Vec<_>>();
-
-                for index in indices {
-                    p.remove(index?);
-                }
-            }
-            p.save()?;
-        }
-        Some(("edit", m)) => {
-            edit_task(m.value_of("index").unwrap().parse()?, m.value_of("editor"))?;
-        }
-        Some(("completions", m)) => {
-            print_completions(m.value_of("shell").unwrap());
-        }
+        Some(("new", m)) => new_project(m)?,
+        Some(("add", m)) => add(m)?,
+        Some(("done", m)) => done(m)?,
+        Some(("rm", m)) => remove(m)?,
+        Some(("edit", m)) => edit_task(m)?,
+        Some(("completions", m)) => print_completions(m),
         _ => {
-            let p = load_project_rec(&*std::env::current_dir()?)?;
+            let p = tutel::load_project_rec(&*std::env::current_dir()?)?;
             println!("{}", p);
         }
     }
@@ -117,9 +52,72 @@ fn run_app(app: App) -> Result<()> {
     Ok(())
 }
 
-/// Prints shell completions for the given shell by name
-fn print_completions(shell_name: &str) {
-    match shell_name {
+fn add(args: &ArgMatches) -> Result<()> {
+    let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    let mut taskname = String::new();
+    let values = args.values_of("taskname").unwrap();
+    let vlen = values.len();
+
+    for (i, s) in values.enumerate() {
+        taskname.push_str(s);
+        if i < vlen - 1 {
+            taskname.push(' ');
+        }
+    }
+
+    p.add(taskname, args.is_present("completed"));
+    p.save()?;
+    Ok(())
+}
+
+fn done(args: &ArgMatches) -> Result<()> {
+    let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    let completed = !args.is_present("not");
+
+    if args.is_present("all") {
+        p.mark_completion_all(completed)
+    } else {
+        let indices = args
+            .values_of("indices")
+            .unwrap()
+            .map(|index| index.parse::<u8>().context("invalid index: {index}"))
+            .collect::<Vec<_>>();
+
+        for index in indices {
+            p.mark_completion(index?, !args.is_present("not"))?;
+        }
+    }
+
+    p.save()?;
+
+    Ok(())
+}
+
+fn remove(args: &ArgMatches) -> Result<()> {
+    let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+
+    if args.is_present("all") {
+        p.remove_all();
+    } else if args.is_present("cleanup") {
+        p.remove_completed()
+    } else {
+        let indices = args
+            .values_of("indices")
+            .unwrap()
+            .map(|index| index.parse::<u8>().context("invalid index: {index}"))
+            .collect::<Vec<_>>();
+
+        for index in indices {
+            p.remove(index?);
+        }
+    }
+    p.save()?;
+
+    Ok(())
+}
+
+fn print_completions(args: &ArgMatches) {
+    match args.value_of("shell").unwrap() {
         "bash" => println!("{}", BASH_COMPLETIONS),
         "zsh" => println!("{}", ZSH_COMPLETIONS),
         "fish" => println!("{}", FISH_COMPLETIONS),
@@ -128,8 +126,10 @@ fn print_completions(shell_name: &str) {
     }
 }
 
-fn edit_task(index: u8, editor_cmd: Option<&str>) -> Result<()> {
-    let mut project = load_project_rec(&*std::env::current_dir()?)?;
+fn edit_task(args: &ArgMatches) -> Result<()> {
+    let index = args.value_of("index").unwrap().parse()?;
+
+    let mut project = tutel::load_project_rec(&*std::env::current_dir()?)?;
     let task = project.get_task_mut(index)?;
     let mut tmpfile = NamedTempFile::new()?;
     tmpfile.write_all(task.name.as_bytes())?;
@@ -137,7 +137,7 @@ fn edit_task(index: u8, editor_cmd: Option<&str>) -> Result<()> {
 
     let path = tmpfile.into_temp_path();
 
-    let editor = if let Some(editor) = editor_cmd {
+    let editor = if let Some(editor) = args.value_of("editor") {
         editor.to_string()
     } else {
         std::env::var_os("EDITOR")
@@ -163,42 +163,15 @@ fn edit_task(index: u8, editor_cmd: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-/// Determines whether a project exists in the given path by checking
-/// for the existence of .tutel.project
-fn has_project(path: &Path) -> bool {
-    let project = path.join(PROJECT_FILE_NAME);
-    project.exists() && project.is_file()
-}
-
-/// Attempts to load a project from the given path.
-/// Assumes the path is a directory and a file called .tutel.toml exists
-fn load_project(path: &Path) -> Result<Project> {
-    let project_path = path.join(PROJECT_FILE_NAME);
-
-    let file_content =
-        fs::read_to_string(project_path.as_path()).context("unable to read project file")?;
-
-    let project_data: ProjectData =
-        toml::from_str(file_content.as_str()).context("invalid project file syntax")?;
-
-    Ok(Project::new(path.to_path_buf(), project_data))
-}
-
-/// Walks the path upwards until .tutel.toml is found and loads it
-fn load_project_rec(path: &Path) -> Result<Project> {
-    for p in path.ancestors() {
-        if has_project(p) {
-            return load_project(p);
-        }
-    }
-
-    bail!("no project found");
-}
-
-/// Creates a new project and adds it to the project list
+/// Creates a new project
 ///
 /// If no project name is given, the name of the current directory is chosen
-fn new_project(name: Option<&str>, path: &Path, force: bool) -> Result<()> {
+fn new_project(args: &ArgMatches) -> Result<()> {
+    let name = args.value_of("name");
+    let force = args.is_present("force");
+
+    let path = std::env::current_dir()?;
+
     // TODO: un-hack me
     let name = if let Some(name) = name {
         name.to_string()
@@ -208,7 +181,7 @@ fn new_project(name: Option<&str>, path: &Path, force: bool) -> Result<()> {
         bail!("no project name given and cannot be inferred")
     };
 
-    let new = path.join(PROJECT_FILE_NAME);
+    let new = path.join(tutel::PROJECT_FILE_NAME);
     if new.exists() && !force {
         bail!(
             "project already exists at {}. try using --force",
@@ -216,8 +189,7 @@ fn new_project(name: Option<&str>, path: &Path, force: bool) -> Result<()> {
         );
     }
 
-    let project = ProjectData::empty(name);
-    fs::write(new, toml::to_string_pretty(&project)?)?;
+    tutel::new_project(&path, name)?;
 
     Ok(())
 }

@@ -3,7 +3,7 @@ use serde::{
     Deserialize,
 };
 
-use super::{ProjectData, Task};
+use super::{data::ProjectData, Task};
 
 const PROJECT_DATA_FIELDS: &[&str] = &["name", "tasks"];
 

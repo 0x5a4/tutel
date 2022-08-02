@@ -1,13 +1,11 @@
 use ansi_term::Color;
+use anyhow::Context;
 use anyhow::{bail, Result};
 use std::fs;
 use std::{
     fmt::{Display, Write},
     path::PathBuf,
 };
-
-mod ser;
-mod de;
 
 #[derive(Debug)]
 pub struct Project {
@@ -16,11 +14,41 @@ pub struct Project {
 }
 
 impl Project {
-    pub const fn new(path: PathBuf, data: ProjectData) -> Self {
-        Self { path, data }
+    /// Creates a new project with not tasks
+    pub const fn new(project_file: PathBuf, name: String) -> Self {
+        Self {
+            path: project_file,
+            data: ProjectData {
+                name,
+                tasks: Vec::new(),
+            },
+        }
     }
 
-    /// Save the project to where it was loaded from
+    /// Tries to load a project from the specified file.
+    ///
+    /// # Errors
+    /// This function will return an Error when the file doesnt exist, or
+    /// a Project could not be loaded from it.
+    pub fn load(project_file: PathBuf) -> Result<Self> {
+        let file_content =
+            fs::read_to_string(project_file.as_path()).context("unable to read project file")?;
+
+        let data: ProjectData =
+            toml::from_str(file_content.as_str()).context("invalid project file syntax")?;
+
+        Ok(Self {
+            path: project_file,
+            data,
+        })
+    }
+
+    /// Save the project to where it was loaded from.
+    ///
+    /// # Errors
+    /// This function will return an Error when the file this project was
+    /// loaded from cant be written(doesnt exist, permission denied) or the
+    /// project could not be serialized. Both of these are not very likely to occur
     pub fn save(&mut self) -> Result<()> {
         let serialized = toml::to_string_pretty(&self.data)?;
         let target = self.path.join(crate::PROJECT_FILE_NAME);
@@ -28,6 +56,11 @@ impl Project {
         Ok(())
     }
 
+    /// Returns a mutable reference to a contained Task.
+    ///
+    /// # Errors
+    /// This function will return an error if a Task with the given index
+    /// could not be found.
     pub fn get_task_mut(&mut self, index: u8) -> Result<&mut Task> {
         for t in &mut self.data.tasks {
             if t.index == index {
@@ -37,8 +70,10 @@ impl Project {
         bail!("no such task with index: {index}")
     }
 
-    pub fn add(&mut self, t: Task) {
-        self.data.tasks.push(t);
+    pub fn add(&mut self, name: String, completed: bool) {
+        self.data
+            .tasks
+            .push(Task::new(name, completed, self.next_index()))
     }
 
     pub fn remove(&mut self, index: u8) {
@@ -50,7 +85,7 @@ impl Project {
     }
 
     pub fn remove_completed(&mut self) {
-        self.data.tasks.retain(|t| !t.completed)
+        self.data.tasks.retain(|t| !t.completed);
     }
 
     pub fn mark_completion_all(&mut self, completed: bool) {
@@ -59,6 +94,11 @@ impl Project {
         }
     }
 
+    /// Marks the Task with the given Index as completed/not completed.
+    ///
+    /// # Errors
+    /// This function will return an error if a Task with the given index
+    /// could not be found.
     pub fn mark_completion(&mut self, index: u8, completed: bool) -> Result<()> {
         for mut t in &mut self.data.tasks {
             if t.index == index {
@@ -123,27 +163,19 @@ impl Display for Project {
 }
 
 /// The part of a project that needs to be saved/loaded
+#[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct ProjectData {
-    name: String,
-    tasks: Vec<Task>,
-}
-
-impl ProjectData {
-    pub fn empty(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            tasks: Vec::new(),
-        }
-    }
+    pub(crate) name: String,
+    pub(crate) tasks: Vec<Task>,
 }
 
 /// A completable Task within a Project
 #[derive(Debug)]
 pub struct Task {
     pub name: String,
-    pub completed: bool,
     pub index: u8,
+    pub completed: bool,
 }
 
 impl Task {
