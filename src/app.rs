@@ -62,7 +62,7 @@ pub fn parse_cli() -> Command {
 
     Info::default()
         .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
-        .descr("tutel\na minimalist todo app for terminal enthusiasts")
+        .descr(concat!("tutel\na minimalistic todo app for terminal enthusiasts"))
         .footer("run without a subcommand to show the todo list")
         .for_parser(parser)
         .run()
