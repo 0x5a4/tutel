@@ -10,18 +10,20 @@ use std::{
 #[derive(Debug)]
 pub struct Project {
     pub path: PathBuf,
+    pub steps: usize,
     data: ProjectData,
 }
 
 impl Project {
     /// Creates a new project with not tasks
-    pub const fn new(project_file: PathBuf, name: String) -> Self {
+    pub const fn new(project_file: PathBuf, steps: usize, name: String) -> Self {
         Self {
             path: project_file,
             data: ProjectData {
                 name,
                 tasks: Vec::new(),
             },
+            steps,
         }
     }
 
@@ -30,7 +32,7 @@ impl Project {
     /// # Errors
     /// This function will return an Error when the file doesnt exist, or
     /// a Project could not be loaded from it.
-    pub fn load(project_file: PathBuf) -> Result<Self> {
+    pub fn load(project_file: PathBuf, steps: usize) -> Result<Self> {
         let file_content =
             fs::read_to_string(project_file.as_path()).context("unable to read project file")?;
 
@@ -40,6 +42,7 @@ impl Project {
         Ok(Self {
             path: project_file,
             data,
+            steps,
         })
     }
 
@@ -150,7 +153,13 @@ impl Display for Project {
             headline_marker.push_str("[X]");
         }
 
-        let headline = format!("{}{}", headline_marker, self.data.name);
+        let steps_counter = if self.steps == 0 {
+            String::new()
+        } else {
+            format!("-{}", self.steps)
+        };
+
+        let headline = format!("{headline_marker}{} {steps_counter}", self.data.name);
         write!(f, "{}", Color::Yellow.bold().paint(headline))?;
 
         if !self.data.tasks.is_empty() {

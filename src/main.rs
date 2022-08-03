@@ -159,7 +159,7 @@ fn new_project(name: Option<String>, force: bool) -> Result<()> {
         );
     }
 
-    tutel::new_project(&path, name)?;
+    tutel::new_project(name)?;
 
     Ok(())
 }

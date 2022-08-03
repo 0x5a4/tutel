@@ -16,9 +16,10 @@ pub use data::{Project, Task};
 pub const PROJECT_FILE_NAME: &str = ".tutel.toml";
 
 /// Creates a new empty Project in the given directory
-pub fn new_project(dir: &Path, name: String) -> Result<Project> {
+pub fn new_project(name: String) -> Result<Project> {
+    let dir = std::env::current_dir()?;
     let path = dir.join(PROJECT_FILE_NAME);
-    let mut project = Project::new(path, name);
+    let mut project = Project::new(path, 0, name);
 
     project.save()?;
 
@@ -27,9 +28,9 @@ pub fn new_project(dir: &Path, name: String) -> Result<Project> {
 
 /// Walks the path upwards until .tutel.toml is found and loads it
 pub fn load_project_rec(path: &Path) -> Result<Project> {
-    for p in path.ancestors() {
+    for (steps, p) in path.ancestors().enumerate() {
         if let Some(project_file) = has_project(p) {
-            return Project::load(project_file);
+            return Project::load(project_file, steps);
         }
     }
 

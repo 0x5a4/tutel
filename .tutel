@@ -1,0 +1,26 @@
+name = 'tutel'
+
+[[tasks]]
+name = 'fix file open close mayhem '
+completed = false
+index = 0
+
+[[tasks]]
+name = 'fix edit newline  '
+completed = true
+index = 1
+
+[[tasks]]
+name = 'fancier displaying'
+completed = false
+index = 2
+
+[[tasks]]
+name = 'remove project'
+completed = true
+index = 3
+
+[[tasks]]
+name = 'show how far up the project is'
+completed = false
+index = 4
