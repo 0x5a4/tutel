@@ -1,6 +1,6 @@
-use ansi_term::Color;
 use anyhow::Context;
 use anyhow::{bail, Result};
+use colored::Colorize;
 use std::fs;
 use std::{
     fmt::{Display, Write},
@@ -159,8 +159,13 @@ impl Display for Project {
             format!("-{}", self.steps)
         };
 
-        let headline = format!("{headline_marker}{} {steps_counter}", self.data.name);
-        write!(f, "{}", Color::Yellow.bold().paint(headline))?;
+        let headline = format!(
+            "{} {steps_counter} {} {}",
+            headline_marker.yellow(),
+            "│".bold(),
+            self.data.name
+        );
+        write!(f, "{}", headline)?;
 
         if !self.data.tasks.is_empty() {
             write!(f, "{}", tasks)?;
@@ -199,10 +204,15 @@ impl Task {
 impl Display for Task {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let marker = if self.completed {
-            Color::Green.paint("[✓]")
+            "[✓]".green()
         } else {
-            Color::Red.paint("[X]")
+            "[X]".red()
         };
-        f.write_fmt(format_args!("{:03}) {marker}{}", self.index, self.name))
+        f.write_fmt(format_args!(
+            "{:03} {} {marker}{}",
+            self.index,
+            "│".bold(),
+            self.name
+        ))
     }
 }

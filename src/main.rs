@@ -3,10 +3,10 @@
 #![warn(clippy::nursery)]
 
 use app::{Command, TaskSelector};
+use colored::Colorize;
 use std::{fs, io::Write};
 use tempfile::NamedTempFile;
 
-use ansi_term::Color;
 use anyhow::{bail, Context, Result};
 
 mod app;
@@ -20,7 +20,7 @@ fn main() {
     match run_app(app::parse_cli()) {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("{} {}", Color::Red.paint("[tutel]"), e,);
+            eprintln!("{} {}", "tutel".red(), e,);
 
             if e.chain().len() > 1 {
                 eprintln!("\t{}", e.root_cause());
