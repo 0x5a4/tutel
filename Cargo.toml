@@ -2,11 +2,12 @@
 name = "tutel"
 version = "0.2.5"
 edition = "2018"
-description = "a minimalist todo app for terminal enthusiasts"
+description = "a minimalistic todo app for terminal enthusiasts"
 authors = ["arthur"]
 homepage = "https://www.github.com/InvalidName662/tutel"
 repository = "https://www.github.com/InvalidName662/tutel"
 license = "MIT"
+categories = ["command-line-utilities"]
 
 [lib]
 name = "tutel"
