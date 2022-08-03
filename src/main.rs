@@ -117,7 +117,7 @@ fn edit_task(index: u8, editor: String) -> Result<()> {
     let task = project.get_task_mut(index)?;
 
     let mut tmpfile = NamedTempFile::new()?;
-    tmpfile.write_all(task.name.as_bytes())?;
+    tmpfile.write_all(task.desc.as_bytes())?;
 
     // Spawn editor process
     let mut cmd = std::process::Command::new(editor.as_str())
@@ -129,7 +129,7 @@ fn edit_task(index: u8, editor: String) -> Result<()> {
 
     // Write changes
     let new = fs::read_to_string(tmpfile.path())?;
-    task.name = new.replace('\n', " ");
+    task.desc = new.replace('\n', " ");
 
     project.save()?;
 

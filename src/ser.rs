@@ -20,7 +20,7 @@ impl Serialize for Task {
         S: serde::Serializer,
     {
         let mut state = serializer.serialize_struct("Task", 3)?;
-        state.serialize_field("name", &self.name)?;
+        state.serialize_field("desc", &self.desc)?;
         state.serialize_field("completed", &self.completed)?;
         state.serialize_field("index", &self.index)?;
         state.end()

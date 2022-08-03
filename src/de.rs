@@ -112,7 +112,7 @@ impl<'de> Visitor<'de> for TaskFieldVisitor {
         E: de::Error,
     {
         match v {
-            "name" => Ok(TaskField::Name),
+            "name" | "desc" => Ok(TaskField::Name),
             "index" => Ok(TaskField::Index),
             "completed" => Ok(TaskField::Completed),
             _ => Err(de::Error::unknown_field(v, TASK_FIELDS)),
@@ -142,16 +142,16 @@ impl<'de> Visitor<'de> for TaskVisitor {
     where
         A: de::MapAccess<'de>,
     {
-        let mut name = None;
+        let mut description = None;
         let mut index = None;
         let mut completed = None;
         while let Some(key) = map.next_key()? {
             match key {
                 TaskField::Name => {
-                    if name.is_some() {
-                        return Err(de::Error::duplicate_field("name"));
+                    if description.is_some() {
+                        return Err(de::Error::duplicate_field("desc/name"));
                     }
-                    name = Some(map.next_value()?);
+                    description = Some(map.next_value()?);
                 }
                 TaskField::Index => {
                     if index.is_some() {
@@ -168,12 +168,12 @@ impl<'de> Visitor<'de> for TaskVisitor {
             }
         }
 
-        let name = name.ok_or_else(|| de::Error::missing_field("name"))?;
+        let desc = description.ok_or_else(|| de::Error::missing_field("desc or name"))?;
         let index = index.ok_or_else(|| de::Error::missing_field("index"))?;
         let completed = completed.ok_or_else(|| de::Error::missing_field("completed"))?;
 
         Ok(Task {
-            name,
+            desc,
             index,
             completed,
         })

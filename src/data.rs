@@ -177,7 +177,7 @@ pub struct ProjectData {
 /// A completable Task within a Project
 #[derive(Debug)]
 pub struct Task {
-    pub name: String,
+    pub desc: String,
     pub index: u8,
     pub completed: bool,
 }
@@ -185,7 +185,7 @@ pub struct Task {
 impl Task {
     pub fn new(name: impl Into<String>, completed: bool, index: u8) -> Self {
         Self {
-            name: name.into(),
+            desc: name.into(),
             completed,
             index,
         }
@@ -203,7 +203,7 @@ impl Display for Task {
             "{:03} {} {marker}{}",
             self.index,
             "│".bold(),
-            self.name
+            self.desc
         ))
     }
 }
