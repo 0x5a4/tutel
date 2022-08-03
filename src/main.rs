@@ -3,7 +3,10 @@
 #![warn(clippy::nursery)]
 
 use app::{Command, TaskSelector};
-use std::{fs, io::Write};
+use std::{
+    fs,
+    io::Write,
+};
 use tempfile::NamedTempFile;
 
 use ansi_term::Color;
@@ -111,21 +114,18 @@ fn edit_task(index: u8, editor: String) -> Result<()> {
 
     let mut tmpfile = NamedTempFile::new()?;
     tmpfile.write_all(task.name.as_bytes())?;
-    tmpfile.flush()?;
-
-    let path = tmpfile.into_temp_path();
 
     // Spawn editor process
     let mut cmd = std::process::Command::new(editor.as_str())
-        .arg(&path)
+        .arg(tmpfile.path())
         .spawn()
         .context("editor {editor} not found")?;
 
     cmd.wait()?;
 
     // Write changes
-    let new_task = fs::read_to_string(path)?;
-    task.name = new_task;
+    let new = fs::read_to_string(tmpfile.path())?;
+    task.name = new.replace('\n', " ");
 
     project.save()?;
 
