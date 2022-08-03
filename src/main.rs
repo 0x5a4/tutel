@@ -31,8 +31,6 @@ fn main() {
 }
 
 fn run_app(command: Command) -> Result<()> {
-    println!("{:#?}", command);
-
     //Run Commands
     match command {
         Command::Show => print_list(),

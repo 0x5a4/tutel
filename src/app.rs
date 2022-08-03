@@ -1,13 +1,14 @@
 use bpaf::{command, construct, env, positional, short, Info, OptionParser, Parser};
 
+/// Indicates what Tasks(s) to select
 #[derive(Debug, Clone)]
 pub enum TaskSelector {
-    // this seems bloated
     Indexed(Vec<u8>),
     All,
     Completed,
 }
 
+/// The command to execute
 #[derive(Debug, Clone)]
 pub enum Command {
     Show,
@@ -19,6 +20,7 @@ pub enum Command {
     PrintCompletion(String),
 }
 
+/// Parse the command line and return the command to be executed
 pub fn parse_cli() -> Command {
     let new_cmd = command("new", Some("create a new project"), new_project_command());
 
