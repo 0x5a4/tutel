@@ -11,10 +11,10 @@ use anyhow::{bail, Context, Result};
 
 mod app;
 
-const BASH_COMPLETIONS: &str = "";
-const ZSH_COMPLETIONS: &str = "";
-const FISH_COMPLETIONS: &str = "";
-const ELVISH_COMPLETIONS: &str = "";
+const BASH_COMPLETIONS: &str = include_str!("../res/tutel-completions.bash");
+const ZSH_COMPLETIONS: &str = include_str!("../res/tutel-completions.zsh");
+const FISH_COMPLETIONS: &str = include_str!("../res/tutel-completions.fish");
+const ELVISH_COMPLETIONS: &str = include_str!("../res/tutel-completions.elv");
 
 fn main() {
     match run_app(app::parse_cli()) {
