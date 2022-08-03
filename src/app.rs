@@ -1,4 +1,4 @@
-use bpaf::{command, construct, env, positional, short, Info, OptionParser, Parser};
+use bpaf::{command, construct, env, long, positional, short, Info, OptionParser, Parser};
 
 /// Indicates what Tasks(s) to select
 #[derive(Debug, Clone)]
@@ -18,6 +18,7 @@ pub enum Command {
     RemoveTask(TaskSelector),
     EditTask(u8, String),
     PrintCompletion(String),
+    RemoveProject,
 }
 
 /// Parse the command line and return the command to be executed
@@ -127,11 +128,18 @@ fn remove_task_command() -> OptionParser<Command> {
         false => Err(""),
     });
 
+    let project = long("project").switch().parse(|v| match v {
+        true => Ok(Command::RemoveProject),
+        false => Err(""),
+    });
+
     let selector = parse_indices().or_else(all).or_else(cleanup);
+
+    let parser = construct!(Command::RemoveTask(selector)).or_else(project);
 
     Info::default()
         .descr("remove a task from a project")
-        .for_parser(construct!(Command::RemoveTask(selector)))
+        .for_parser(parser)
 }
 
 fn parse_indices() -> Parser<TaskSelector> {

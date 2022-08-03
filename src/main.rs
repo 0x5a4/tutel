@@ -3,10 +3,7 @@
 #![warn(clippy::nursery)]
 
 use app::{Command, TaskSelector};
-use std::{
-    fs,
-    io::Write,
-};
+use std::{fs, io::Write};
 use tempfile::NamedTempFile;
 
 use ansi_term::Color;
@@ -43,6 +40,7 @@ fn run_app(command: Command) -> Result<()> {
         Command::RemoveTask(selector) => remove(selector),
         Command::EditTask(index, editor) => edit_task(index, editor),
         Command::PrintCompletion(shell) => print_completions(shell.as_str()),
+        Command::RemoveProject => remove_project(),
     }
 }
 
@@ -94,6 +92,12 @@ fn remove(selector: TaskSelector) -> Result<()> {
     p.save()?;
 
     Ok(())
+}
+
+fn remove_project() -> Result<()> {
+    let p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+
+    fs::remove_file(p.path).context("could not delete project file")
 }
 
 fn print_completions(shell: &str) -> Result<()> {
