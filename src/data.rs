@@ -132,6 +132,7 @@ impl Project {
 
 impl Display for Project {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Gather all tasks and their completion state
         let mut tasks = String::new();
         let mut completed = true;
 
@@ -142,33 +143,23 @@ impl Display for Project {
             }
         }
 
-        let mut headline_marker = String::new();
-        if completed {
-            if self.data.tasks.is_empty() {
-                headline_marker.push_str("[empty]");
-            } else {
-                headline_marker.push_str("[✓]");
-            }
-        } else {
-            headline_marker.push_str("[X]");
-        }
-
         let steps_counter = if self.steps == 0 {
             String::new()
         } else {
-            format!("-{}", self.steps)
+            format!(" [-{}]", self.steps).blue().to_string()
         };
 
-        let headline = format!(
-            "{} {steps_counter} {} {}",
-            headline_marker.yellow(),
-            "│".bold(),
-            self.data.name
-        );
+        let marker = if completed { "✓".green() } else { "X".red() };
+
+        let headline_marker = format!("[{marker}]{steps_counter}");
+
+        let headline = format!("{} {}", headline_marker.yellow().bold(), self.data.name.bold());
         write!(f, "{}", headline)?;
 
         if !self.data.tasks.is_empty() {
             write!(f, "{}", tasks)?;
+        } else {
+            write!(f, "\n[empty]")?;
         }
 
         Ok(())
