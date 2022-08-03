@@ -18,12 +18,8 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.45"
-clap = "3.2.15"
+bpaf = "0.4.9"
 toml = "0.5.8"
 ansi_term = "0.12.1"
 serde = "1.0.130"
 tempfile = "3.3.0"
-
-[build-dependencies]
-clap = "3.2.15"
-clap_complete = "3.2.3"

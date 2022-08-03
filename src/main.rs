@@ -2,24 +2,22 @@
 #![warn(clippy::style)]
 #![warn(clippy::nursery)]
 
+use app::{Command, TaskSelector};
 use std::{fs, io::Write};
 use tempfile::NamedTempFile;
 
 use ansi_term::Color;
 use anyhow::{bail, Context, Result};
-use clap::{App, ArgMatches};
 
 mod app;
 
-const BASH_COMPLETIONS: &str = include_str!(concat!(env!("OUT_DIR"), "/tutel.bash"));
-const ZSH_COMPLETIONS: &str = include_str!(concat!(env!("OUT_DIR"), "/_tutel"));
-const FISH_COMPLETIONS: &str = include_str!(concat!(env!("OUT_DIR"), "/tutel.fish"));
-const ELVISH_COMPLETIONS: &str = include_str!(concat!(env!("OUT_DIR"), "/tutel.elv"));
+const BASH_COMPLETIONS: &str = "";
+const ZSH_COMPLETIONS: &str = "";
+const FISH_COMPLETIONS: &str = "";
+const ELVISH_COMPLETIONS: &str = "";
 
 fn main() {
-    let app = app::new();
-
-    match run_app(app) {
+    match run_app(app::parse_cli()) {
         Ok(_) => {}
         Err(e) => {
             eprintln!("{} {}", Color::Red.paint("[tutel]"), e,);
@@ -32,60 +30,46 @@ fn main() {
     }
 }
 
-fn run_app(app: App) -> Result<()> {
-    let matches = app.get_matches();
+fn run_app(command: Command) -> Result<()> {
+    println!("{:#?}", command);
 
     //Run Commands
-    match matches.subcommand() {
-        Some(("new", m)) => new_project(m)?,
-        Some(("add", m)) => add(m)?,
-        Some(("done", m)) => done(m)?,
-        Some(("rm", m)) => remove(m)?,
-        Some(("edit", m)) => edit_task(m)?,
-        Some(("completions", m)) => print_completions(m),
-        _ => {
-            let p = tutel::load_project_rec(&*std::env::current_dir()?)?;
-            println!("{}", p);
-        }
+    match command {
+        Command::Show => print_list(),
+        Command::NewProject { name, force } => new_project(name, force),
+        Command::AddTask { desc, completed } => add(desc, completed),
+        Command::MarkCompletion(selector, completed) => done(selector, completed),
+        Command::RemoveTask(selector) => remove(selector),
+        Command::EditTask(index, editor) => edit_task(index, editor),
+        Command::PrintCompletion(shell) => print_completions(shell.as_str()),
     }
+}
+
+fn print_list() -> Result<()> {
+    let p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    println!("{p}");
 
     Ok(())
 }
 
-fn add(args: &ArgMatches) -> Result<()> {
+fn add(desc: String, completed: bool) -> Result<()> {
     let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
-    let mut taskname = String::new();
-    let values = args.values_of("taskname").unwrap();
-    let vlen = values.len();
-
-    for (i, s) in values.enumerate() {
-        taskname.push_str(s);
-        if i < vlen - 1 {
-            taskname.push(' ');
-        }
-    }
-
-    p.add(taskname, args.is_present("completed"));
+    p.add(desc, completed);
     p.save()?;
     Ok(())
 }
 
-fn done(args: &ArgMatches) -> Result<()> {
+fn done(selector: TaskSelector, completed: bool) -> Result<()> {
     let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
-    let completed = !args.is_present("not");
 
-    if args.is_present("all") {
-        p.mark_completion_all(completed)
-    } else {
-        let indices = args
-            .values_of("indices")
-            .unwrap()
-            .map(|index| index.parse::<u8>().context("invalid index: {index}"))
-            .collect::<Vec<_>>();
-
-        for index in indices {
-            p.mark_completion(index?, !args.is_present("not"))?;
+    match selector {
+        TaskSelector::Indexed(indices) => {
+            for index in indices {
+                p.mark_completion(index, completed)?;
+            }
         }
+        TaskSelector::All => p.mark_completion_all(completed),
+        TaskSelector::Completed => unreachable!(),
     }
 
     p.save()?;
@@ -93,61 +77,48 @@ fn done(args: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn remove(args: &ArgMatches) -> Result<()> {
+fn remove(selector: TaskSelector) -> Result<()> {
     let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
 
-    if args.is_present("all") {
-        p.remove_all();
-    } else if args.is_present("cleanup") {
-        p.remove_completed()
-    } else {
-        let indices = args
-            .values_of("indices")
-            .unwrap()
-            .map(|index| index.parse::<u8>().context("invalid index: {index}"))
-            .collect::<Vec<_>>();
-
-        for index in indices {
-            p.remove(index?);
+    match selector {
+        TaskSelector::Indexed(indices) => {
+            for index in indices {
+                p.remove(index);
+            }
         }
+        TaskSelector::All => p.remove_all(),
+        TaskSelector::Completed => p.remove_completed(),
     }
+
     p.save()?;
 
     Ok(())
 }
 
-fn print_completions(args: &ArgMatches) {
-    match args.value_of("shell").unwrap() {
+fn print_completions(shell: &str) -> Result<()> {
+    match shell {
         "bash" => println!("{}", BASH_COMPLETIONS),
         "zsh" => println!("{}", ZSH_COMPLETIONS),
         "fish" => println!("{}", FISH_COMPLETIONS),
         "elvish" => println!("{}", ELVISH_COMPLETIONS),
-        _ => {}
-    }
+        _ => bail!("no such shell {shell}"),
+    };
+
+    Ok(())
 }
 
-fn edit_task(args: &ArgMatches) -> Result<()> {
-    let index = args.value_of("index").unwrap().parse()?;
-
+fn edit_task(index: u8, editor: String) -> Result<()> {
     let mut project = tutel::load_project_rec(&*std::env::current_dir()?)?;
     let task = project.get_task_mut(index)?;
+
     let mut tmpfile = NamedTempFile::new()?;
     tmpfile.write_all(task.name.as_bytes())?;
     tmpfile.flush()?;
 
     let path = tmpfile.into_temp_path();
 
-    let editor = if let Some(editor) = args.value_of("editor") {
-        editor.to_string()
-    } else {
-        std::env::var_os("EDITOR")
-            .context("no editor specified and EDITOR isnt set")?
-            .to_string_lossy()
-            .to_string()
-    };
-
     // Spawn editor process
-    let mut cmd = std::process::Command::new(editor)
+    let mut cmd = std::process::Command::new(editor.as_str())
         .arg(&path)
         .spawn()
         .context("editor {editor} not found")?;
@@ -166,15 +137,12 @@ fn edit_task(args: &ArgMatches) -> Result<()> {
 /// Creates a new project
 ///
 /// If no project name is given, the name of the current directory is chosen
-fn new_project(args: &ArgMatches) -> Result<()> {
-    let name = args.value_of("name");
-    let force = args.is_present("force");
-
+fn new_project(name: Option<String>, force: bool) -> Result<()> {
     let path = std::env::current_dir()?;
 
     // TODO: un-hack me
     let name = if let Some(name) = name {
-        name.to_string()
+        name
     } else if let Some(name) = path.file_name() {
         name.to_string_lossy().to_string()
     } else {

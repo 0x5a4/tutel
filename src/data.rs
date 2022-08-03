@@ -51,8 +51,7 @@ impl Project {
     /// project could not be serialized. Both of these are not very likely to occur
     pub fn save(&mut self) -> Result<()> {
         let serialized = toml::to_string_pretty(&self.data)?;
-        let target = self.path.join(crate::PROJECT_FILE_NAME);
-        fs::write(target, serialized)?;
+        fs::write(self.path.as_path(), serialized).context("unable to write project file")?;
         Ok(())
     }
 
