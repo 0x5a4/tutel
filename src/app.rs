@@ -63,7 +63,9 @@ pub fn parse_cli() -> Command {
 
     Info::default()
         .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
-        .descr(concat!("tutel\na minimalistic todo app for terminal enthusiasts"))
+        .descr(concat!(
+            "tutel\na minimalistic todo app for terminal enthusiasts"
+        ))
         .footer("run without a subcommand to show the todo list")
         .for_parser(parser)
         .run()
@@ -71,7 +73,10 @@ pub fn parse_cli() -> Command {
 
 fn new_project_command() -> OptionParser<Command> {
     let name = positional("name").optional();
-    let force = short('f').long("force").switch();
+    let force = short('f')
+        .long("force")
+        .help("force project creation")
+        .switch();
 
     Info::default()
         .descr("create a new project in the current directory")
@@ -95,43 +100,65 @@ fn add_task_command() -> OptionParser<Command> {
             desc
         });
 
-    let completed = short('c').long("completed").switch();
+    let completed = short('c')
+        .long("completed")
+        .help("mark the task as already completed")
+        .switch();
 
     Info::default()
-        .descr("add a new task")
+        .descr("add a new task. aliases: a")
         .for_parser(construct!(Command::AddTask { desc, completed }))
 }
 
 fn task_completed_command() -> OptionParser<Command> {
-    let completed = short('!').long("not").switch().map(|v| !v);
+    let completed = short('!')
+        .long("not")
+        .help("mark the task as not being done")
+        .switch()
+        .map(|v| !v);
     // can unconditionally be mapped to TaskSelector::All since its value is only used if it is
     // present
-    let all = short('a').long("all").switch().parse(|v| match v {
-        true => Ok(TaskSelector::All),
-        false => Err("all must be specified on its own"),
-    });
+    let all = short('a')
+        .long("all")
+        .help("select all tasks")
+        .switch()
+        .parse(|v| match v {
+            true => Ok(TaskSelector::All),
+            false => Err("all must be specified on its own"),
+        });
     let selector = parse_indices().or_else(all);
 
     Info::default()
-        .descr("mark a task as being done")
+        .descr("mark a task as being done. aliases: d")
         .for_parser(construct!(Command::MarkCompletion(selector, completed)))
 }
 
 fn remove_task_command() -> OptionParser<Command> {
-    let all = short('a').long("all").switch().parse(|v| match v {
-        true => Ok(TaskSelector::All),
-        false => Err(""),
-    });
+    let all = short('a')
+        .long("all")
+        .help("remove all tasks")
+        .switch()
+        .parse(|v| match v {
+            true => Ok(TaskSelector::All),
+            false => Err(""),
+        });
 
-    let cleanup = short('c').long("cleanup").switch().parse(|v| match v {
-        true => Ok(TaskSelector::Completed),
-        false => Err(""),
-    });
+    let cleanup = short('c')
+        .long("cleanup")
+        .help("remove all completed tasks")
+        .switch()
+        .parse(|v| match v {
+            true => Ok(TaskSelector::Completed),
+            false => Err(""),
+        });
 
-    let project = long("project").switch().parse(|v| match v {
-        true => Ok(Command::RemoveProject),
-        false => Err(""),
-    });
+    let project = long("project")
+        .help("remove the whole project file")
+        .switch()
+        .parse(|v| match v {
+            true => Ok(Command::RemoveProject),
+            false => Err(""),
+        });
 
     let selector = parse_indices().or_else(all).or_else(cleanup);
 
@@ -163,10 +190,14 @@ fn parse_indices() -> Parser<TaskSelector> {
 fn edit_task_command() -> OptionParser<Command> {
     let index = positional("index").from_str::<u8>();
 
-    let editor = env("EDITOR").short('e').long("editor").argument("editor");
+    let editor = env("EDITOR")
+        .short('e')
+        .long("editor")
+        .help("the editor to use (default: $EDITOR)")
+        .argument("editor");
 
     Info::default()
-        .descr("edit an existing task")
+        .descr("edit an existing task. aliases: e")
         .for_parser(construct!(Command::EditTask(index, editor)))
 }
 
