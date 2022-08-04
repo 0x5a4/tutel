@@ -19,10 +19,15 @@ impl Serialize for Task {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("Task", 3)?;
+        let mut state = serializer.serialize_struct("Task", 4)?;
         state.serialize_field("desc", &self.desc)?;
         state.serialize_field("completed", &self.completed)?;
         state.serialize_field("index", &self.index)?;
+        if let Some(timestamp) = self.due {
+            state.serialize_field("due", &timestamp)?;
+        } else {
+            state.skip_field("due")?;
+        }
         state.end()
     }
 }

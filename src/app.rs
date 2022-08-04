@@ -12,8 +12,15 @@ pub enum TaskSelector {
 #[derive(Debug, Clone)]
 pub enum Command {
     Show,
-    NewProject { name: Option<String>, force: bool },
-    AddTask { desc: String, completed: bool },
+    NewProject {
+        name: Option<String>,
+        force: bool,
+    },
+    AddTask {
+        desc: String,
+        completed: bool,
+        due: Option<String>,
+    },
     MarkCompletion(TaskSelector, bool),
     RemoveTask(TaskSelector),
     EditTask(u8, String),
@@ -105,9 +112,19 @@ fn add_task_command() -> OptionParser<Command> {
         .help("mark the task as already completed")
         .switch();
 
+    let due = short('d')
+        .long("due")
+        .help("set a timestamp when this task is due")
+        .argument("timestamp")
+        .optional();
+
     Info::default()
         .descr("add a new task. aliases: a")
-        .for_parser(construct!(Command::AddTask { desc, completed }))
+        .for_parser(construct!(Command::AddTask {
+            desc,
+            completed,
+            due
+        }))
 }
 
 fn task_completed_command() -> OptionParser<Command> {

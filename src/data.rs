@@ -72,10 +72,10 @@ impl Project {
         bail!("no such task with index: {index}")
     }
 
-    pub fn add(&mut self, name: String, completed: bool) {
+    pub fn add(&mut self, name: String, completed: bool, due: Option<u64>) {
         self.data
             .tasks
-            .push(Task::new(name, completed, self.next_index()))
+            .push(Task::new(name, completed, self.next_index(), due))
     }
 
     pub fn remove(&mut self, index: u8) {
@@ -153,7 +153,11 @@ impl Display for Project {
 
         let headline_marker = format!("[{marker}]{steps_counter}");
 
-        let headline = format!("{} {}", headline_marker.yellow().bold(), self.data.name.bold());
+        let headline = format!(
+            "{} {}",
+            headline_marker.yellow().bold(),
+            self.data.name.bold()
+        );
         write!(f, "{}", headline)?;
 
         if !self.data.tasks.is_empty() {
@@ -180,14 +184,16 @@ pub struct Task {
     pub desc: String,
     pub index: u8,
     pub completed: bool,
+    pub due: Option<u64>,
 }
 
 impl Task {
-    pub fn new(name: impl Into<String>, completed: bool, index: u8) -> Self {
+    pub fn new(name: impl Into<String>, completed: bool, index: u8, due: Option<u64>) -> Self {
         Self {
             desc: name.into(),
             completed,
             index,
+            due,
         }
     }
 }

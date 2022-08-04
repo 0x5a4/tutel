@@ -90,12 +90,13 @@ impl<'de> Deserialize<'de> for ProjectData {
     }
 }
 
-const TASK_FIELDS: &[&str] = &["name", "index", "completed"];
+const TASK_FIELDS: &[&str] = &["name", "index", "completed", "due"];
 
 enum TaskField {
     Name,
     Index,
     Completed,
+    Due,
 }
 
 struct TaskFieldVisitor;
@@ -115,6 +116,7 @@ impl<'de> Visitor<'de> for TaskFieldVisitor {
             "name" | "desc" => Ok(TaskField::Name),
             "index" => Ok(TaskField::Index),
             "completed" => Ok(TaskField::Completed),
+            "due" => Ok(TaskField::Due),
             _ => Err(de::Error::unknown_field(v, TASK_FIELDS)),
         }
     }
@@ -145,6 +147,7 @@ impl<'de> Visitor<'de> for TaskVisitor {
         let mut description = None;
         let mut index = None;
         let mut completed = None;
+        let mut due = None;
         while let Some(key) = map.next_key()? {
             match key {
                 TaskField::Name => {
@@ -165,6 +168,12 @@ impl<'de> Visitor<'de> for TaskVisitor {
                     }
                     completed = Some(map.next_value()?);
                 }
+                TaskField::Due => {
+                    if due.is_some() {
+                        return Err(de::Error::duplicate_field("due"));
+                    }
+                    due = Some(map.next_value()?);
+                }
             }
         }
 
@@ -176,6 +185,7 @@ impl<'de> Visitor<'de> for TaskVisitor {
             desc,
             index,
             completed,
+            due,
         })
     }
 }

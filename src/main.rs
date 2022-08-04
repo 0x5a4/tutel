@@ -4,7 +4,11 @@
 
 use app::{Command, TaskSelector};
 use colored::Colorize;
-use std::{fs, io::Write};
+use std::{
+    fs,
+    io::Write,
+    time::{self, Instant, SystemTime, UNIX_EPOCH},
+};
 use tempfile::NamedTempFile;
 
 use anyhow::{bail, Context, Result};
@@ -35,7 +39,11 @@ fn run_app(command: Command) -> Result<()> {
     match command {
         Command::Show => print_list(),
         Command::NewProject { name, force } => new_project(name, force),
-        Command::AddTask { desc, completed } => add(desc, completed),
+        Command::AddTask {
+            desc,
+            completed,
+            due,
+        } => add(desc, completed, due),
         Command::MarkCompletion(selector, completed) => done(selector, completed),
         Command::RemoveTask(selector) => remove(selector),
         Command::EditTask(index, editor) => edit_task(index, editor),
@@ -51,9 +59,39 @@ fn print_list() -> Result<()> {
     Ok(())
 }
 
-fn add(desc: String, completed: bool) -> Result<()> {
+fn add(desc: String, completed: bool, due: Option<String>) -> Result<()> {
+    // Parse date
+    let date = if let Some(date_string) = due {
+        let timestamp = if let Ok(duration) = humantime::parse_duration(date_string.as_str()) {
+            let date = SystemTime::now() + duration;
+            date.duration_since(UNIX_EPOCH)
+                .context(
+                    "system time seems to be before unix epoch. could not calculate date offset",
+                )?
+                .as_secs()
+        } else if let Ok(date) = humantime::parse_rfc3339_weak(date_string.as_str()) {
+            date.duration_since(UNIX_EPOCH)
+                .context(
+                    "system time seems to be before unix epoch. could not calculate date offset",
+                )?
+                .as_secs()
+        } else if let Ok(date) = humantime::parse_rfc3339(date_string.as_str()) {
+            date.duration_since(UNIX_EPOCH)
+                .context(
+                    "system time seems to be before unix epoch. could not calculate date offset",
+                )?
+                .as_secs()
+        } else {
+            bail!("neither a valid timestamp or offset: {date_string}")
+        };
+
+        Some(timestamp)
+    } else {
+        None
+    };
+
     let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
-    p.add(desc, completed);
+    p.add(desc, completed, date);
     p.save()?;
     Ok(())
 }
