@@ -86,7 +86,7 @@ fn new_project_command() -> OptionParser<Command> {
 fn add_task_command() -> OptionParser<Command> {
     let desc = positional("description")
         .many()
-        .guard(|v| v.len() > 1, "the task description is required")
+        .guard(|v| !v.is_empty(), "the task description is required")
         .map(|v| {
             let mut desc = String::new();
             let vlen = v.len();
