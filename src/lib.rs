@@ -26,7 +26,7 @@ pub fn new_project(name: String) -> Result<Project> {
     Ok(project)
 }
 
-/// Walks the path upwards until .tutel.toml is found and loads it
+/// Walks the path upwards until a project file(.tutel.toml) is found and loads it
 pub fn load_project_rec(path: &Path) -> Result<Project> {
     for (steps, p) in path.ancestors().enumerate() {
         if let Some(project_file) = has_project(p) {

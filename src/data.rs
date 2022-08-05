@@ -7,6 +7,9 @@ use std::{
     path::PathBuf,
 };
 
+/// A Project hold multiple tasks. It also holds the location of
+/// the file these tasks were loaded from and how many
+/// recursive steps have been taken to reach that file.
 #[derive(Debug)]
 pub struct Project {
     pub path: PathBuf,
@@ -166,7 +169,7 @@ impl Display for Project {
     }
 }
 
-/// The part of a project that needs to be saved/loaded
+/// The part of a Project that needs to be saved/loaded
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct ProjectData {
