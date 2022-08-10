@@ -8,9 +8,6 @@ organization, so there really is no need for your todo app to redo it.
 Run it and `tutel` will either use the todo list(saved in a `.tutel.toml` file) from
 your current directory or search upwards until one is found. 
 
-## Why the name?
-[This.](https://youtu.be/oxzEdm29JLw)
-
 ## Installation
 
 ### Using cargo
@@ -37,8 +34,8 @@ tutel add really important thing // Everything after the subcommand is merged, n
 tutel
 
 Output:
-[X]test
-000) [X]really important thing
+[X] list with important things
+001 │ [X]really important thing
 
 // Mark the task as being completed
 tutel done 0
@@ -53,3 +50,17 @@ tutel rm 0
 tutel rm --cleanup
 ```
 
+## What are all those symbols in my todo list?
+```
+ ┌─ sums up if the whole list is completed or not
+ │    ┌─ how many recursive steps were taken to reach this
+ ▼    ▼
+[X] [-1] project name 
+001 │ [X]description
+  ▲    ▲
+  │    └─ the completion state of this task
+  └─ the index of the task, used for referencing it in commands
+```
+
+## Why the name?
+[This 🐢](https://youtu.be/oxzEdm29JLw)
