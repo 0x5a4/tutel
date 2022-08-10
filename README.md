@@ -1,11 +1,21 @@
 # tutel
-a minimalist todo app.
+a minimalist todo app trying to integrate with your existing workflow.
 
 ## What is this?
-Tutel is a very small todo app allowing the user to create per-directory task-lists. Tutel can also recursively walk
-the directory tree until a todo list is found.
+`tutel` is built upon a simple principle: **One Todo-List per directory.**  
+Why? Because you (propably) already have some kind of directory based
+organization, so there really is no need for your todo app to redo it.  
+Run it and `tutel` will either use the todo list(saved in a `.tutel.toml` file) from
+your current directory or search upwards until one is found. 
+
+## Why the name?
+[This.](https://youtu.be/oxzEdm29JLw)
 
 ## Installation
+
+### Using cargo
+`cargo install tutel`
+
 ### Arch Linux
 [There's an AUR package](https://aur.archlinux.org/packages/tutel).
 
@@ -38,5 +48,8 @@ tutel edit 0
 
 // Remove it
 tutel rm 0
+
+// Or remove everything already completed
+tutel rm --cleanup
 ```
 
