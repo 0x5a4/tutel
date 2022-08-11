@@ -8,6 +8,16 @@ organization, so there really is no need for your todo app to redo it.
 Run it and `tutel` will either use the todo list(saved in a `.tutel.toml` file) from
 your current directory or search upwards until one is found. 
 
+## Feature Rundown
+- [X] Add Todos
+- [X] Edit existing Todos
+- [X] Remove Todos
+- [X] Remove all completed todos
+- [X] Consistent Indices of Todos across removals
+- [ ] Due dates
+- [X] Really ugly list visualization that needs improvement(Help me [pls](https://github.com/0x5a4/tutel/issues/2))
+- [X] Shell completions
+
 ## Installation
 
 ### Using cargo
