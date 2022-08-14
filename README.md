@@ -1,5 +1,5 @@
 # tutel
-a minimalist todo app trying to integrate with your existing workflow.
+a minimalistic todo app trying to integrate with your existing workflow.
 
 ## What is this?
 `tutel` is built upon a simple principle: **One Todo-List per directory.**  
