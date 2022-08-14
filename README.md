@@ -9,6 +9,7 @@ Run it and `tutel` will either use the todo list(saved in a `.tutel.toml` file) 
 your current directory or search upwards until one is found. 
 
 ## Feature Rundown
+- [X] Walk up the current path to find todos of parent directories
 - [X] Add Todos
 - [X] Edit existing Todos
 - [X] Remove Todos
