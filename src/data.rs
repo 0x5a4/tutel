@@ -72,7 +72,7 @@ impl Project {
                 return Ok(t);
             }
         }
-        bail!("no such task with index: {index}")
+        bail!("no task with index {}", &index)
     }
 
     pub fn add(&mut self, name: String, completed: bool) {
@@ -105,14 +105,9 @@ impl Project {
     /// This function will return an error if a Task with the given index
     /// could not be found.
     pub fn mark_completion(&mut self, index: u8, completed: bool) -> Result<()> {
-        for mut t in &mut self.data.tasks {
-            if t.index == index {
-                t.completed = completed;
-                return Ok(());
-            }
-        }
-
-        bail!("no such task with such index: {index}")
+        let task = self.get_task_mut(index)?;
+        task.completed = completed;
+        Ok(())
     }
 
     /// Calculates the next highest unused index.

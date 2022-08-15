@@ -106,7 +106,7 @@ fn print_completions(shell: &str) -> Result<()> {
         "zsh" => println!("{}", ZSH_COMPLETIONS),
         "fish" => println!("{}", FISH_COMPLETIONS),
         "elvish" => println!("{}", ELVISH_COMPLETIONS),
-        _ => bail!("no such shell {shell}"),
+        _ => bail!("no such shell: shell"),
     };
 
     Ok(())
