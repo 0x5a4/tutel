@@ -20,7 +20,7 @@ fn main() {
     match run_app(app::parse_cli()) {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("{} {}", "tutel".red(), e,);
+            eprintln!("{} {}", "[tutel]".red(), e,);
 
             if e.chain().len() > 1 {
                 eprintln!("\t{}", e.root_cause());
