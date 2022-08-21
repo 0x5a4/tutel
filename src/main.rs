@@ -112,7 +112,7 @@ fn print_completions(shell: &str) -> Result<()> {
     Ok(())
 }
 
-fn edit_task(index: u8, editor: String) -> Result<()> {
+fn edit_task(index: usize, editor: String) -> Result<()> {
     let mut project = tutel::load_project_rec(&*std::env::current_dir()?)?;
     let task = project.get_task_mut(index)?;
 

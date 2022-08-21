@@ -3,7 +3,7 @@ use bpaf::{construct, env, long, positional, short, OptionParser, Parser};
 /// Indicates what Tasks(s) to select
 #[derive(Debug, Clone)]
 pub enum TaskSelector {
-    Indexed(Vec<u8>),
+    Indexed(Vec<usize>),
     All,
     Completed,
 }
@@ -16,7 +16,7 @@ pub enum Command {
     AddTask { desc: String, completed: bool },
     MarkCompletion(TaskSelector, bool),
     RemoveTask(TaskSelector),
-    EditTask(u8, String),
+    EditTask(usize, String),
     PrintCompletion(String),
     RemoveProject,
 }
@@ -146,7 +146,7 @@ fn parse_indices() -> impl Parser<TaskSelector> {
 
             for x in v {
                 indices.push(
-                    x.parse::<u8>()
+                    x.parse::<usize>()
                         .map_err(|_| format!("not a valid index: {x}"))?,
                 )
             }
@@ -156,7 +156,7 @@ fn parse_indices() -> impl Parser<TaskSelector> {
 }
 
 fn edit_task_command() -> OptionParser<Command> {
-    let index = positional("index").from_str::<u8>(); // i'd use usize or u32 here...
+    let index = positional("index").from_str::<usize>();
 
     let editor = env("EDITOR")
         .short('e')

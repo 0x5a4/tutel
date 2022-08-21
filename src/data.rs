@@ -66,7 +66,7 @@ impl Project {
     /// # Errors
     /// This function will return an error if a Task with the given index
     /// could not be found.
-    pub fn get_task_mut(&mut self, index: u8) -> Result<&mut Task> {
+    pub fn get_task_mut(&mut self, index: usize) -> Result<&mut Task> {
         for t in &mut self.data.tasks {
             if t.index == index {
                 return Ok(t);
@@ -81,7 +81,7 @@ impl Project {
             .push(Task::new(name, completed, self.next_index()))
     }
 
-    pub fn remove(&mut self, index: u8) {
+    pub fn remove(&mut self, index: usize) {
         self.data.tasks.retain(|t| t.index != index);
     }
 
@@ -104,7 +104,7 @@ impl Project {
     /// # Errors
     /// This function will return an error if a Task with the given index
     /// could not be found.
-    pub fn mark_completion(&mut self, index: u8, completed: bool) -> Result<()> {
+    pub fn mark_completion(&mut self, index: usize, completed: bool) -> Result<()> {
         let task = self.get_task_mut(index)?;
         task.completed = completed;
         Ok(())
@@ -112,8 +112,8 @@ impl Project {
 
     /// Calculates the next highest unused index.
     ///
-    /// Wraps around to 0 after 255 is reached.
-    pub fn next_index(&self) -> u8 {
+    /// Wraps around to 0 after 999 is reached.
+    pub fn next_index(&self) -> usize {
         if self.data.tasks.is_empty() {
             return 0;
         }
@@ -124,7 +124,13 @@ impl Project {
                 highest = t.index;
             }
         }
-        highest + 1
+
+        // Wrap around
+        if highest >= 999 {
+            0
+        } else {
+            highest + 1
+        }
     }
 }
 
@@ -176,12 +182,12 @@ pub struct ProjectData {
 #[derive(Debug)]
 pub struct Task {
     pub desc: String,
-    pub index: u8,
+    pub index: usize,
     pub completed: bool,
 }
 
 impl Task {
-    pub fn new(name: impl Into<String>, completed: bool, index: u8) -> Self {
+    pub fn new(name: impl Into<String>, completed: bool, index: usize) -> Self {
         Self {
             desc: name.into(),
             completed,
