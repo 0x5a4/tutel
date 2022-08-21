@@ -102,8 +102,8 @@ fn task_completed_command() -> OptionParser<Command> {
     let completed = short('!')
         .long("not")
         .help("mark the task as not being done")
-        .switch()
-        .map(|v| !v);
+        .flag(false, true);
+
     // can unconditionally be mapped to TaskSelector::All since its value is only used if it is
     // present
     let all = short('a')
