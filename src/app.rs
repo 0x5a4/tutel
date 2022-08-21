@@ -1,4 +1,4 @@
-use bpaf::{command, construct, env, long, positional, short, Info, OptionParser, Parser};
+use bpaf::{construct, env, long, positional, short, OptionParser, Parser};
 
 /// Indicates what Tasks(s) to select
 #[derive(Debug, Clone)]
@@ -23,51 +23,39 @@ pub enum Command {
 
 /// Parse the command line and return the command to be executed
 pub fn parse_cli() -> Command {
-    let new_cmd = command("new", Some("create a new project"), new_project_command());
+    let new_cmd = new_project_command()
+        .command("new")
+        .help("create a new project");
 
-    let add_cmd = command("add", Some("add a new task"), add_task_command());
-    let add_short = command::<_, &str>("a", None, add_task_command()).hide();
+    let add_cmd = add_task_command()
+        .command("add")
+        .short('a')
+        .help("add a new task");
 
-    let done_cmd = command(
-        "done",
-        Some("mark a task as being completed"),
-        task_completed_command(),
-    );
-    let done_short = command::<_, &str>("d", None, task_completed_command()).hide();
+    let done_cmd = task_completed_command()
+        .command("done")
+        .short('d')
+        .help("mark a task as being completed");
 
-    let rm_cmd = command("rm", Some("remove a task"), remove_task_command());
+    let rm_cmd = remove_task_command().command("rm").help("remove a task");
 
-    let edit_cmd = command("edit", Some("edit an existing task"), edit_task_command());
-    let edit_short = command::<_, &str>("e", None, edit_task_command()).hide();
+    let edit_cmd = edit_task_command()
+        .command("edit")
+        .short('e')
+        .help("edit an existing task");
 
-    let completion_cmd = command(
-        "completions",
-        Some("print shell completions"),
-        print_completions_command(),
-    );
+    let completion_cmd = print_completions_command()
+        .command("completions")
+        .help("print shell completions");
 
-    let show = Parser::pure(Command::Show);
-
-    let parser = construct!([
-        new_cmd,
-        add_cmd,
-        add_short,
-        done_cmd,
-        done_short,
-        rm_cmd,
-        edit_cmd,
-        edit_short,
-        completion_cmd,
-        show
-    ]);
-
-    Info::default()
+    construct!([new_cmd, add_cmd, done_cmd, rm_cmd, edit_cmd, completion_cmd])
+        .fallback(Command::Show)
+        .to_options()
         .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
         .descr(concat!(
             "tutel\na minimalistic todo app for terminal enthusiasts"
         ))
         .footer("run without a subcommand to show the todo list")
-        .for_parser(parser)
         .run()
 }
 
@@ -78,9 +66,9 @@ fn new_project_command() -> OptionParser<Command> {
         .help("force project creation")
         .switch();
 
-    Info::default()
+    construct!(Command::NewProject { name, force })
+        .to_options()
         .descr("create a new project in the current directory")
-        .for_parser(construct!(Command::NewProject { name, force }))
 }
 
 fn add_task_command() -> OptionParser<Command> {
@@ -105,9 +93,9 @@ fn add_task_command() -> OptionParser<Command> {
         .help("mark the task as already completed")
         .switch();
 
-    Info::default()
+    construct!(Command::AddTask { desc, completed })
+        .to_options()
         .descr("add a new task. aliases: a")
-        .for_parser(construct!(Command::AddTask { desc, completed }))
 }
 
 fn task_completed_command() -> OptionParser<Command> {
@@ -126,11 +114,10 @@ fn task_completed_command() -> OptionParser<Command> {
             true => Ok(TaskSelector::All),
             false => Err("all must be specified on its own"),
         });
-    let selector = parse_indices().or_else(all);
-
-    Info::default()
+    let selector = construct!([parse_indices(), all]);
+    construct!(Command::MarkCompletion(selector, completed))
+        .to_options()
         .descr("mark a task as being done. aliases: d")
-        .for_parser(construct!(Command::MarkCompletion(selector, completed)))
 }
 
 fn remove_task_command() -> OptionParser<Command> {
@@ -160,16 +147,14 @@ fn remove_task_command() -> OptionParser<Command> {
             false => Err(""),
         });
 
-    let selector = parse_indices().or_else(all).or_else(cleanup);
+    let remove_task = construct!([parse_indices(), all, cleanup]).map(Command::RemoveTask);
 
-    let parser = construct!(Command::RemoveTask(selector)).or_else(project);
-
-    Info::default()
+    construct!([remove_task, project])
+        .to_options()
         .descr("remove a task from a project")
-        .for_parser(parser)
 }
 
-fn parse_indices() -> Parser<TaskSelector> {
+fn parse_indices() -> impl Parser<TaskSelector> {
     positional("indices")
         .many()
         .guard(|v| !v.is_empty(), "one or more task indices are required")
@@ -188,7 +173,7 @@ fn parse_indices() -> Parser<TaskSelector> {
 }
 
 fn edit_task_command() -> OptionParser<Command> {
-    let index = positional("index").from_str::<u8>();
+    let index = positional("index").from_str::<u8>(); // i'd use usize or u32 here...
 
     let editor = env("EDITOR")
         .short('e')
@@ -196,15 +181,15 @@ fn edit_task_command() -> OptionParser<Command> {
         .help("the editor to use (default: $EDITOR)")
         .argument("editor");
 
-    Info::default()
+    construct!(Command::EditTask(index, editor))
+        .to_options()
         .descr("edit an existing task. aliases: e")
-        .for_parser(construct!(Command::EditTask(index, editor)))
 }
 
 fn print_completions_command() -> OptionParser<Command> {
     let shell = positional("shell");
 
-    Info::default()
+    construct!(Command::PrintCompletion(shell))
+        .to_options()
         .descr("print shell completions for the given shell")
-        .for_parser(construct!(Command::PrintCompletion(shell)))
 }
