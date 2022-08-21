@@ -157,7 +157,11 @@ impl Display for Project {
 
         let headline_marker = format!("[{marker}]{steps_counter}");
 
-        let headline = format!("{} {}", headline_marker.yellow().bold(), self.data.name.bold());
+        let headline = format!(
+            "{} {}",
+            headline_marker.yellow().bold(),
+            self.data.name.bold()
+        );
         write!(f, "{}", headline)?;
 
         if !self.data.tasks.is_empty() {
