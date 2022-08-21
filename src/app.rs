@@ -124,28 +124,16 @@ fn remove_task_command() -> OptionParser<Command> {
     let all = short('a')
         .long("all")
         .help("remove all tasks")
-        .switch()
-        .parse(|v| match v {
-            true => Ok(TaskSelector::All),
-            false => Err(""),
-        });
+        .req_flag(TaskSelector::All);
 
     let cleanup = short('c')
         .long("cleanup")
         .help("remove all completed tasks")
-        .switch()
-        .parse(|v| match v {
-            true => Ok(TaskSelector::Completed),
-            false => Err(""),
-        });
+        .req_flag(TaskSelector::Completed);
 
     let project = long("project")
         .help("remove the whole project file")
-        .switch()
-        .parse(|v| match v {
-            true => Ok(Command::RemoveProject),
-            false => Err(""),
-        });
+        .req_flag(Command::RemoveProject);
 
     let remove_task = construct!([parse_indices(), all, cleanup]).map(Command::RemoveTask);
 
