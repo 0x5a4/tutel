@@ -109,11 +109,8 @@ fn task_completed_command() -> OptionParser<Command> {
     let all = short('a')
         .long("all")
         .help("select all tasks")
-        .switch()
-        .parse(|v| match v {
-            true => Ok(TaskSelector::All),
-            false => Err("all must be specified on its own"),
-        });
+        .req_flag(TaskSelector::All);
+
     let selector = construct!([parse_indices(), all]);
     construct!(Command::MarkCompletion(selector, completed))
         .to_options()
