@@ -19,7 +19,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.45"
-bpaf = "0.4.9"
+bpaf = "0.5.0"
 toml = "0.5.8"
 serde = "1.0.130"
 tempfile = "3.3.0"
