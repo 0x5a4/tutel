@@ -137,10 +137,30 @@ fn remove_task_command() -> OptionParser<Command> {
         .descr("remove a task from a project")
 }
 
+fn complete_indices(input: &Vec<String>) -> Vec<(String, Option<String>)> {
+    let p = tutel::load_project_rec(&*std::env::current_dir().unwrap()).unwrap();
+    let mut res = Vec::new();
+
+    let full = &input[..input.len() - 1];
+    let active = input.last().unwrap();
+
+    for task in p.data.tasks {
+        let tid = task.index.to_string();
+        if full.contains(&tid) {
+            continue;
+        }
+        if tid.starts_with(active) {
+            res.push((format!("{}", task.index), Some(task.desc.clone())));
+        }
+    }
+
+    res
+}
+
 fn parse_indices() -> impl Parser<TaskSelector> {
     positional("indices")
-        .many()
-        .guard(|v| !v.is_empty(), "one or more task indices are required")
+        .some("one or more task indices are required")
+        .complete(complete_indices)
         .parse::<_, _, String>(|v| {
             let mut indices = Vec::with_capacity(v.len());
 
