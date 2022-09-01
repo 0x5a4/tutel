@@ -14,15 +14,14 @@ pub enum Command {
     Show,
     NewProject { name: Option<String>, force: bool },
     AddTask { desc: String, completed: bool },
-    MarkCompletion(TaskSelector, bool),
+    MarkCompletion(bool, TaskSelector),
     RemoveTask(TaskSelector),
-    EditTask(usize, String),
+    EditTask(String, usize),
     PrintCompletion(String),
     RemoveProject,
 }
 
-/// Parse the command line and return the command to be executed
-pub fn parse_cli() -> Command {
+fn options() -> OptionParser<Command> {
     let new_cmd = new_project_command()
         .command("new")
         .help("create a new project");
@@ -54,7 +53,16 @@ pub fn parse_cli() -> Command {
         .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
         .descr("tutel\na minimalistic todo app for terminal enthusiasts")
         .footer("run without a subcommand to show the todo list")
-        .run()
+}
+
+#[test]
+fn check_bpaf_invariants() {
+    options().check_invariants(true)
+}
+
+/// Parse the command line and return the command to be executed
+pub fn parse_cli() -> Command {
+    options().run()
 }
 
 fn new_project_command() -> OptionParser<Command> {
@@ -64,7 +72,7 @@ fn new_project_command() -> OptionParser<Command> {
         .help("force project creation")
         .switch();
 
-    construct!(Command::NewProject { name, force })
+    construct!(Command::NewProject { force, name })
         .to_options()
         .descr("create a new project in the current directory")
 }
@@ -91,7 +99,7 @@ fn add_task_command() -> OptionParser<Command> {
         .help("mark the task as already completed")
         .switch();
 
-    construct!(Command::AddTask { desc, completed })
+    construct!(Command::AddTask { completed, desc })
         .to_options()
         .descr("add a new task. aliases: a")
 }
@@ -110,7 +118,7 @@ fn task_completed_command() -> OptionParser<Command> {
         .req_flag(TaskSelector::All);
 
     let selector = construct!([parse_indices(), all]);
-    construct!(Command::MarkCompletion(selector, completed))
+    construct!(Command::MarkCompletion(completed, selector))
         .to_options()
         .descr("mark a task as being done. aliases: d")
 }
@@ -184,7 +192,7 @@ fn edit_task_command() -> OptionParser<Command> {
         .help("the editor to use (default: $EDITOR)")
         .argument("editor");
 
-    construct!(Command::EditTask(index, editor))
+    construct!(Command::EditTask(editor, index))
         .to_options()
         .descr("edit an existing task. aliases: e")
 }
