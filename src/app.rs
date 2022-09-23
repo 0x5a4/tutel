@@ -14,14 +14,15 @@ pub enum Command {
     Show,
     NewProject { name: Option<String>, force: bool },
     AddTask { desc: String, completed: bool },
-    MarkCompletion(bool, TaskSelector),
+    MarkCompletion(TaskSelector, bool),
     RemoveTask(TaskSelector),
-    EditTask(String, usize),
+    EditTask(usize, String),
     PrintCompletion(String),
     RemoveProject,
 }
 
-fn options() -> OptionParser<Command> {
+/// Parse the command line and return the command to be executed
+pub fn parse_cli() -> Command {
     let new_cmd = new_project_command()
         .command("new")
         .help("create a new project");
@@ -53,16 +54,7 @@ fn options() -> OptionParser<Command> {
         .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
         .descr("tutel\na minimalistic todo app for terminal enthusiasts")
         .footer("run without a subcommand to show the todo list")
-}
-
-#[test]
-fn check_bpaf_invariants() {
-    options().check_invariants(true)
-}
-
-/// Parse the command line and return the command to be executed
-pub fn parse_cli() -> Command {
-    options().run()
+        .run()
 }
 
 fn new_project_command() -> OptionParser<Command> {
@@ -72,7 +64,7 @@ fn new_project_command() -> OptionParser<Command> {
         .help("force project creation")
         .switch();
 
-    construct!(Command::NewProject { force, name })
+    construct!(Command::NewProject { name, force })
         .to_options()
         .descr("create a new project in the current directory")
 }
@@ -99,7 +91,7 @@ fn add_task_command() -> OptionParser<Command> {
         .help("mark the task as already completed")
         .switch();
 
-    construct!(Command::AddTask { completed, desc })
+    construct!(Command::AddTask { desc, completed })
         .to_options()
         .descr("add a new task. aliases: a")
 }
@@ -118,7 +110,7 @@ fn task_completed_command() -> OptionParser<Command> {
         .req_flag(TaskSelector::All);
 
     let selector = construct!([parse_indices(), all]);
-    construct!(Command::MarkCompletion(completed, selector))
+    construct!(Command::MarkCompletion(selector, completed))
         .to_options()
         .descr("mark a task as being done. aliases: d")
 }
@@ -145,30 +137,10 @@ fn remove_task_command() -> OptionParser<Command> {
         .descr("remove a task from a project")
 }
 
-fn complete_indices(input: &Vec<String>) -> Vec<(String, Option<String>)> {
-    let p = tutel::load_project_rec(&*std::env::current_dir().unwrap()).unwrap();
-    let mut res = Vec::new();
-
-    let full = &input[..input.len() - 1];
-    let active = input.last().unwrap();
-
-    for task in p.data.tasks {
-        let tid = task.index.to_string();
-        if full.contains(&tid) {
-            continue;
-        }
-        if tid.starts_with(active) {
-            res.push((format!("{}", task.index), Some(task.desc.clone())));
-        }
-    }
-
-    res
-}
-
 fn parse_indices() -> impl Parser<TaskSelector> {
     positional("indices")
-        .some("one or more task indices are required")
-        .complete(complete_indices)
+        .many()
+        .guard(|v| !v.is_empty(), "one or more task indices are required")
         .parse::<_, _, String>(|v| {
             let mut indices = Vec::with_capacity(v.len());
 
@@ -192,7 +164,7 @@ fn edit_task_command() -> OptionParser<Command> {
         .help("the editor to use (default: $EDITOR)")
         .argument("editor");
 
-    construct!(Command::EditTask(editor, index))
+    construct!(Command::EditTask(index, editor))
         .to_options()
         .descr("edit an existing task. aliases: e")
 }
