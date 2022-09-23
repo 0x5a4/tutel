@@ -14,7 +14,7 @@ use std::{
 pub struct Project {
     pub path: PathBuf,
     pub steps: usize,
-    pub data: ProjectData,
+    data: ProjectData,
 }
 
 impl Project {
@@ -179,7 +179,7 @@ impl Display for Project {
 #[derive(Debug)]
 pub struct ProjectData {
     pub(crate) name: String,
-    pub tasks: Vec<Task>,
+    pub(crate) tasks: Vec<Task>,
 }
 
 /// A completable Task within a Project
