@@ -36,9 +36,9 @@ fn run_app(command: Command) -> Result<()> {
         Command::Show => print_list(),
         Command::NewProject { name, force } => new_project(name, force),
         Command::AddTask { desc, completed } => add(desc, completed),
-        Command::MarkCompletion(selector, completed) => done(selector, completed),
+        Command::MarkCompletion(completed, selector) => done(selector, completed),
         Command::RemoveTask(selector) => remove(selector),
-        Command::EditTask(index, editor) => edit_task(index, editor),
+        Command::EditTask(editor, index) => edit_task(index, editor),
         Command::PrintCompletion(shell) => print_completions(shell.as_str()),
         Command::RemoveProject => remove_project(),
     }
