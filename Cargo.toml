@@ -19,13 +19,11 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.45"
-bpaf = { version = "0.5.0", features = ["autocomplete"] }
+bpaf = { version = "0.6.0", features = ["autocomplete"] }
 toml = "0.5.8"
 serde = "1.0.130"
 tempfile = "3.3.0"
 colored = "2.0.0"
 
-
-[patch.crates-io]
-bpaf = { git = 'https://github.com/pacak/bpaf', branch = "rc-0.5.5"  }
-#bpaf = { path = "/home/pacak/ej/bpaf/" }
+[workspace.metadata.cauwugo]
+bpaf = true

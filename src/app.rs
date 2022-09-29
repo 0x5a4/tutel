@@ -66,7 +66,7 @@ pub fn parse_cli() -> Command {
 }
 
 fn new_project_command() -> OptionParser<Command> {
-    let name = positional("name").optional();
+    let name = positional::<String>("name").optional();
     let force = short('f')
         .long("force")
         .help("force project creation")
@@ -78,7 +78,7 @@ fn new_project_command() -> OptionParser<Command> {
 }
 
 fn add_task_command() -> OptionParser<Command> {
-    let desc = positional("description")
+    let desc = positional::<String>("description")
         .many()
         .guard(|v| !v.is_empty(), "the task description is required")
         .map(|v| {
@@ -86,7 +86,7 @@ fn add_task_command() -> OptionParser<Command> {
             let vlen = v.len();
 
             for (i, s) in v.iter().enumerate() {
-                desc.push_str(&*s);
+                desc.push_str(s);
                 if i < vlen - 1 {
                     desc.push(' ');
                 }
@@ -166,7 +166,7 @@ fn complete_indices(input: &Vec<String>) -> Vec<(String, Option<String>)> {
 }
 
 fn parse_indices() -> impl Parser<TaskSelector> {
-    positional("indices")
+    positional::<String>("indices")
         .some("one or more task indices are required")
         .complete(complete_indices)
         .parse::<_, _, String>(|v| {
@@ -184,13 +184,13 @@ fn parse_indices() -> impl Parser<TaskSelector> {
 }
 
 fn edit_task_command() -> OptionParser<Command> {
-    let index = positional("index").from_str::<usize>();
+    let index = positional::<usize>("index");
 
     let editor = env("EDITOR")
         .short('e')
         .long("editor")
         .help("the editor to use (default: $EDITOR)")
-        .argument("editor");
+        .argument::<String>("editor");
 
     construct!(Command::EditTask(editor, index))
         .to_options()
@@ -198,7 +198,7 @@ fn edit_task_command() -> OptionParser<Command> {
 }
 
 fn print_completions_command() -> OptionParser<Command> {
-    let shell = positional("shell");
+    let shell = positional::<String>("shell");
 
     construct!(Command::PrintCompletion(shell))
         .to_options()
