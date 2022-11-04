@@ -1,13 +1,13 @@
 use anyhow::Context;
 use anyhow::{bail, Result};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use std::fs;
 use std::{
     fmt::{Display, Write},
     path::PathBuf,
 };
 
-/// A Project hold multiple tasks. It also holds the location of
+/// A Project holds multiple tasks. It also holds the location of
 /// the file these tasks were loaded from and how many
 /// recursive steps have been taken to reach that file.
 #[derive(Debug)]
@@ -18,7 +18,7 @@ pub struct Project {
 }
 
 impl Project {
-    /// Creates a new project with not tasks
+    /// Creates a new project with no tasks
     pub const fn new(project_file: PathBuf, steps: usize, name: String) -> Self {
         Self {
             path: project_file,
@@ -33,8 +33,8 @@ impl Project {
     /// Tries to load a project from the specified file.
     ///
     /// # Errors
-    /// This function will return an Error when the file doesnt exist, or
-    /// a Project could not be loaded from it.
+    /// This function will return an Error when the file doesn't exists, or
+    /// a Project couldn't be loaded from it.
     pub fn load(project_file: PathBuf, steps: usize) -> Result<Self> {
         let file_content =
             fs::read_to_string(project_file.as_path()).context("unable to read project file")?;
@@ -49,11 +49,11 @@ impl Project {
         })
     }
 
-    /// Save the project to where it was loaded from.
+    /// Saves the project to where it was loaded from.
     ///
     /// # Errors
     /// This function will return an Error when the file this project was
-    /// loaded from cant be written(doesnt exist, permission denied) or the
+    /// loaded from can't be written(doesnt exist, permission denied) or the
     /// project could not be serialized. Both of these are not very likely to occur
     pub fn save(&mut self) -> Result<()> {
         let serialized = toml::to_string_pretty(&self.data)?;
@@ -64,8 +64,8 @@ impl Project {
     /// Returns a mutable reference to a contained Task.
     ///
     /// # Errors
-    /// This function will return an error if a Task with the given index
-    /// could not be found.
+    /// This function will return an error if no Task with the given index
+    /// could be found.
     pub fn get_task_mut(&mut self, index: usize) -> Result<&mut Task> {
         for t in &mut self.data.tasks {
             if t.index == index {
@@ -153,7 +153,11 @@ impl Display for Project {
             format!(" [-{}]", self.steps).blue().to_string()
         };
 
-        let marker = if completed { "✓".green() } else { "X".red() };
+        let marker = if completed {
+            "✓".green().to_string()
+        } else {
+            "X".red().to_string()
+        };
 
         let headline_marker = format!("[{marker}]{steps_counter}");
 
@@ -203,9 +207,9 @@ impl Task {
 impl Display for Task {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let marker = if self.completed {
-            "[✓]".green()
+            "[✓]".green().to_string()
         } else {
-            "[X]".red()
+            "[X]".red().to_string()
         };
         f.write_fmt(format_args!(
             "{:03} {} {marker}{}",

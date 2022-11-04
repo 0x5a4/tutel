@@ -1,3 +1,6 @@
+[workspace.metadata.cauwugo]
+bpaf = true
+
 [package]
 name = "tutel"
 version = "0.2.7"
@@ -23,4 +26,4 @@ bpaf = { version = "0.7.1", features = ["autocomplete", "bright-color"] }
 toml = "0.5.8"
 serde = "1.0.130"
 tempfile = "3.3.0"
-colored = "2.0.0"
+owo-colors = "3.5.0"

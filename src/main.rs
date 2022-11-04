@@ -3,7 +3,7 @@
 #![warn(clippy::nursery)]
 
 use app::{Command, TaskSelector};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use std::{fs, io::Write};
 use tempfile::NamedTempFile;
 
@@ -39,21 +39,21 @@ fn run_app(command: Command) -> Result<()> {
 }
 
 fn print_list() -> Result<()> {
-    let p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    let p = tutel::load_project_rec(&std::env::current_dir()?)?;
     println!("{p}");
 
     Ok(())
 }
 
 fn add(desc: String, completed: bool) -> Result<()> {
-    let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    let mut p = tutel::load_project_rec(&std::env::current_dir()?)?;
     p.add(desc, completed);
     p.save()?;
     Ok(())
 }
 
 fn done(selector: TaskSelector, completed: bool) -> Result<()> {
-    let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    let mut p = tutel::load_project_rec(&std::env::current_dir()?)?;
 
     match selector {
         TaskSelector::Indexed(indices) => {
@@ -71,7 +71,7 @@ fn done(selector: TaskSelector, completed: bool) -> Result<()> {
 }
 
 fn remove(selector: TaskSelector) -> Result<()> {
-    let mut p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    let mut p = tutel::load_project_rec(&std::env::current_dir()?)?;
 
     match selector {
         TaskSelector::Indexed(indices) => {
@@ -89,13 +89,13 @@ fn remove(selector: TaskSelector) -> Result<()> {
 }
 
 fn remove_project() -> Result<()> {
-    let p = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    let p = tutel::load_project_rec(&std::env::current_dir()?)?;
 
     fs::remove_file(p.path).context("could not delete project file")
 }
 
 fn edit_task(index: usize, editor: String) -> Result<()> {
-    let mut project = tutel::load_project_rec(&*std::env::current_dir()?)?;
+    let mut project = tutel::load_project_rec(&std::env::current_dir()?)?;
     let task = project.get_task_mut(index)?;
 
     let mut tmpfile = NamedTempFile::new()?;

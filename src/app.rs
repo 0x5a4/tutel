@@ -52,11 +52,6 @@ fn options() -> OptionParser<Command> {
         .footer("run without a subcommand to show the todo list")
 }
 
-#[test]
-fn check_bpaf_invariants() {
-    options().check_invariants(true)
-}
-
 /// Parse the command line and return the command to be executed
 pub fn parse_cli() -> Command {
     options().run()
