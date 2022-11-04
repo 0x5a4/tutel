@@ -141,7 +141,16 @@ fn remove_task_command() -> OptionParser<Command> {
 }
 
 fn complete_indices(input: &Vec<String>) -> Vec<(String, Option<String>)> {
-    let p = tutel::load_project_rec(&*std::env::current_dir().unwrap()).unwrap();
+    let workdir = match std::env::current_dir() {
+        Ok(x) => x,
+        Err(_) => return Vec::new(),
+    };
+
+    let p = match tutel::load_project_rec(&workdir) {
+        Ok(x) => x,
+        Err(_) => return Vec::new(),
+    };
+
     let mut res = Vec::new();
 
     let full = &input[..input.len() - 1];
