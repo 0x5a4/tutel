@@ -1,6 +1,6 @@
 use bpaf::{construct, env, long, positional, short, OptionParser, Parser};
 
-/// Indicates what Tasks(s) to select
+/// Indicates what Task(s) to select
 #[derive(Debug, Clone)]
 pub enum TaskSelector {
     Indexed(Vec<usize>),
@@ -17,7 +17,6 @@ pub enum Command {
     MarkCompletion(bool, TaskSelector),
     RemoveTask(TaskSelector),
     EditTask(String, usize),
-    PrintCompletion(String),
     RemoveProject,
 }
 
@@ -43,11 +42,9 @@ fn options() -> OptionParser<Command> {
         .short('e')
         .help("edit an existing task");
 
-    let completion_cmd = print_completions_command()
-        .command("completions")
-        .help("print shell completions");
+    // TODO: completions cmd compat
 
-    construct!([new_cmd, add_cmd, done_cmd, rm_cmd, edit_cmd, completion_cmd])
+    construct!([new_cmd, add_cmd, done_cmd, rm_cmd, edit_cmd])
         .fallback(Command::Show)
         .to_options()
         .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
@@ -78,7 +75,7 @@ fn new_project_command() -> OptionParser<Command> {
 }
 
 fn add_task_command() -> OptionParser<Command> {
-    let desc = positional("description")
+    let desc = positional::<String>("description")
         .many()
         .guard(|v| !v.is_empty(), "the task description is required")
         .map(|v| {
@@ -86,12 +83,12 @@ fn add_task_command() -> OptionParser<Command> {
             let vlen = v.len();
 
             for (i, s) in v.iter().enumerate() {
-                desc.push_str(&*s);
+                desc.push_str(s);
                 if i < vlen - 1 {
                     desc.push(' ');
                 }
             }
-            desc
+            "what".to_string()
         });
 
     let completed = short('c')
@@ -110,8 +107,6 @@ fn task_completed_command() -> OptionParser<Command> {
         .help("mark the task as not being done")
         .flag(false, true);
 
-    // can unconditionally be mapped to TaskSelector::All since its value is only used if it is
-    // present
     let all = short('a')
         .long("all")
         .help("select all tasks")
@@ -184,7 +179,7 @@ fn parse_indices() -> impl Parser<TaskSelector> {
 }
 
 fn edit_task_command() -> OptionParser<Command> {
-    let index = positional("index").from_str::<usize>();
+    let index = positional::<usize>("index");
 
     let editor = env("EDITOR")
         .short('e')
@@ -195,12 +190,4 @@ fn edit_task_command() -> OptionParser<Command> {
     construct!(Command::EditTask(editor, index))
         .to_options()
         .descr("edit an existing task. aliases: e")
-}
-
-fn print_completions_command() -> OptionParser<Command> {
-    let shell = positional("shell");
-
-    construct!(Command::PrintCompletion(shell))
-        .to_options()
-        .descr("print shell completions for the given shell")
 }

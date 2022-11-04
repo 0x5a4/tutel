@@ -11,11 +11,6 @@ use anyhow::{bail, Context, Result};
 
 mod app;
 
-const BASH_COMPLETIONS: &str = include_str!("../res/tutel-completions.bash");
-const ZSH_COMPLETIONS: &str = include_str!("../res/tutel-completions.zsh");
-const FISH_COMPLETIONS: &str = include_str!("../res/tutel-completions.fish");
-const ELVISH_COMPLETIONS: &str = include_str!("../res/tutel-completions.elv");
-
 fn main() {
     match run_app(app::parse_cli()) {
         Ok(_) => {}
@@ -39,7 +34,6 @@ fn run_app(command: Command) -> Result<()> {
         Command::MarkCompletion(completed, selector) => done(selector, completed),
         Command::RemoveTask(selector) => remove(selector),
         Command::EditTask(editor, index) => edit_task(index, editor),
-        Command::PrintCompletion(shell) => print_completions(shell.as_str()),
         Command::RemoveProject => remove_project(),
     }
 }
@@ -98,18 +92,6 @@ fn remove_project() -> Result<()> {
     let p = tutel::load_project_rec(&*std::env::current_dir()?)?;
 
     fs::remove_file(p.path).context("could not delete project file")
-}
-
-fn print_completions(shell: &str) -> Result<()> {
-    match shell {
-        "bash" => println!("{}", BASH_COMPLETIONS),
-        "zsh" => println!("{}", ZSH_COMPLETIONS),
-        "fish" => println!("{}", FISH_COMPLETIONS),
-        "elvish" => println!("{}", ELVISH_COMPLETIONS),
-        _ => bail!("no such shell: shell"),
-    };
-
-    Ok(())
 }
 
 fn edit_task(index: usize, editor: String) -> Result<()> {
