@@ -19,7 +19,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.45"
-bpaf = { version = "0.7.1", features = ["autocomplete", "bright-color"] }
+bpaf = { version = "0.7.1", features = ["autocomplete"] }
 toml = "0.5.8"
 serde = "1.0.130"
 tempfile = "3.3.0"

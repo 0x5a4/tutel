@@ -52,13 +52,11 @@ fn parser() -> bpaf::OptionParser<App> {
 
     let cmd = construct!([new_cmd, add_cmd, done_cmd, rm_cmd, edit_cmd]).fallback(Command::Show);
 
-    construct!(App {
-        cmd,
-    })
-    .to_options()
-    .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
-    .descr("tutel\na minimalistic todo app for terminal enthusiasts")
-    .footer("run without a subcommand to show the todo list")
+    construct!(App { cmd })
+        .to_options()
+        .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
+        .descr("tutel\na minimalistic todo app for terminal enthusiasts")
+        .footer("run without a subcommand to show the todo list")
 }
 
 pub fn parse_cli() -> App {
