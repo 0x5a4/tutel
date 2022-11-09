@@ -6,6 +6,7 @@ use app::{Command, TaskSelector};
 use owo_colors::OwoColorize;
 use std::{fs, io::Write};
 use tempfile::NamedTempFile;
+use tutel::{Project, Task};
 
 use anyhow::{bail, Context, Result};
 
@@ -40,7 +41,7 @@ fn run_app(command: Command) -> Result<()> {
 
 fn print_list() -> Result<()> {
     let p = tutel::load_project_rec(&std::env::current_dir()?)?;
-    println!("{p}");
+    println!("{}", stringify_project(&p));
 
     Ok(())
 }
@@ -144,4 +145,58 @@ fn new_project(name: Option<String>, force: bool) -> Result<()> {
     tutel::new_project(name)?;
 
     Ok(())
+}
+
+fn stringify_project(project: &Project) -> String {
+    let mut result = String::new();
+    let mut tasks = String::new();
+    let mut completed = true;
+
+    for t in &project.data.tasks {
+        tasks.push('\n');
+        tasks.push_str(stringify_task(t).as_str());
+        if !t.completed {
+            completed = false;
+        }
+    }
+
+    let steps = if project.steps == 0 {
+        String::new()
+    } else {
+        format!(" [-{}]", project.steps).blue().bold().to_string()
+    };
+
+    let marker = if completed {
+        "✓".green().to_string()
+    } else {
+        "X".red().to_string()
+    };
+
+    let headline = format!(
+        "{}{}{}{} {}",
+        '['.yellow().bold(), 
+        marker,
+        ']'.yellow().bold(),
+        steps,
+        project.data.name.bold()
+    );
+    result.push_str(headline.as_str());
+
+    if tasks.is_empty() {
+        result.push_str("\n[empty]");
+    } else {
+        result.push_str(tasks.as_str());
+    }
+
+    result
+}
+
+fn stringify_task(task: &Task) -> String {
+    let marker = if task.completed {
+        "[✓]".green().to_string()
+    } else {
+        "[X]".red().to_string()
+    };
+
+    format!("{:03} {} {}{}", task.index, "│".bold(), marker, task.desc)
 }

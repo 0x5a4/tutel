@@ -1,11 +1,7 @@
 use anyhow::Context;
 use anyhow::{bail, Result};
-use owo_colors::OwoColorize;
 use std::fs;
-use std::{
-    fmt::{Display, Write},
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 /// A Project holds multiple tasks. It also holds the location of
 /// the file these tasks were loaded from and how many
@@ -134,55 +130,10 @@ impl Project {
     }
 }
 
-impl Display for Project {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Gather all tasks and their completion state
-        let mut tasks = String::new();
-        let mut completed = true;
-
-        for t in &self.data.tasks {
-            write!(&mut tasks, "\n{}", t)?;
-            if !t.completed {
-                completed = false;
-            }
-        }
-
-        let steps_counter = if self.steps == 0 {
-            String::new()
-        } else {
-            format!(" [-{}]", self.steps).blue().to_string()
-        };
-
-        let marker = if completed {
-            "✓".green().to_string()
-        } else {
-            "X".red().to_string()
-        };
-
-        let headline_marker = format!("[{marker}]{steps_counter}");
-
-        let headline = format!(
-            "{} {}",
-            headline_marker.yellow().bold(),
-            self.data.name.bold()
-        );
-        write!(f, "{}", headline)?;
-
-        if !self.data.tasks.is_empty() {
-            write!(f, "{}", tasks)?;
-        } else {
-            write!(f, "\n[empty]")?;
-        }
-
-        Ok(())
-    }
-}
-
 /// The part of a Project that needs to be saved/loaded
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub struct ProjectData {
-    pub(crate) name: String,
+    pub name: String,
     pub tasks: Vec<Task>,
 }
 
@@ -201,21 +152,5 @@ impl Task {
             completed,
             index,
         }
-    }
-}
-
-impl Display for Task {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let marker = if self.completed {
-            "[✓]".green().to_string()
-        } else {
-            "[X]".red().to_string()
-        };
-        f.write_fmt(format_args!(
-            "{:03} {} {marker}{}",
-            self.index,
-            "│".bold(),
-            self.desc
-        ))
     }
 }

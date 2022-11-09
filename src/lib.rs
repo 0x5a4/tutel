@@ -3,7 +3,7 @@
 #![warn(clippy::nursery)]
 #![warn(clippy::style)]
 
-mod data;
+mod project;
 mod de;
 mod ser;
 
@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Result};
 
-pub use data::{Project, Task};
+pub use project::{Project, Task};
 
 pub const PROJECT_FILE_NAME: &str = ".tutel.toml";
 

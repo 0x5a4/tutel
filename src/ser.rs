@@ -1,6 +1,6 @@
 use serde::{ser::SerializeStruct, Serialize};
 
-use super::{data::ProjectData, Task};
+use super::{project::ProjectData, Task};
 
 impl Serialize for ProjectData {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
