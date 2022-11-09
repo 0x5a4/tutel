@@ -96,9 +96,13 @@ fn remove(mut p: Project, selector: TaskSelector) -> Result<()> {
 }
 
 fn remove_project() -> Result<()> {
-    let p = tutel::load_project_rec(&std::env::current_dir()?)?;
+    for path in std::env::current_dir()?.ancestors() {
+        if let Some(project_file) = tutel::has_project(path) {
+            fs::remove_file(project_file).context("could not delete project file")?
+        }
+    }
 
-    fs::remove_file(p.path).context("could not delete project file")
+    Ok(())
 }
 
 fn edit_task(mut p: Project, index: usize, editor: String) -> Result<()> {
