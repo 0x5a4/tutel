@@ -20,7 +20,13 @@ pub enum Command {
     RemoveProject,
 }
 
-fn options() -> OptionParser<Command> {
+#[derive(Clone)]
+pub struct App {
+    pub cmd: Command,
+}
+
+fn parser() -> bpaf::OptionParser<App> {
+    // Subcommands
     let new_cmd = new_project_command()
         .command("new")
         .help("create a new project");
@@ -44,17 +50,19 @@ fn options() -> OptionParser<Command> {
 
     // TODO: completions cmd compat
 
-    construct!([new_cmd, add_cmd, done_cmd, rm_cmd, edit_cmd])
-        .fallback(Command::Show)
-        .to_options()
-        .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
-        .descr("tutel\na minimalistic todo app for terminal enthusiasts")
-        .footer("run without a subcommand to show the todo list")
+    let cmd = construct!([new_cmd, add_cmd, done_cmd, rm_cmd, edit_cmd]).fallback(Command::Show);
+
+    construct!(App {
+        cmd,
+    })
+    .to_options()
+    .version(concat!("tutel v", env!("CARGO_PKG_VERSION")))
+    .descr("tutel\na minimalistic todo app for terminal enthusiasts")
+    .footer("run without a subcommand to show the todo list")
 }
 
-/// Parse the command line and return the command to be executed
-pub fn parse_cli() -> Command {
-    options().run()
+pub fn parse_cli() -> App {
+    parser().run()
 }
 
 fn new_project_command() -> OptionParser<Command> {

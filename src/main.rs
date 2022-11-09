@@ -2,7 +2,7 @@
 #![warn(clippy::style)]
 #![warn(clippy::nursery)]
 
-use app::{Command, TaskSelector};
+use app::{App, Command, TaskSelector};
 use owo_colors::OwoColorize;
 use std::{fs, io::Write};
 use tempfile::NamedTempFile;
@@ -26,36 +26,44 @@ fn main() {
     }
 }
 
-fn run_app(command: Command) -> Result<()> {
+fn run_app(app: App) -> Result<()> {
+    let cmd = app.cmd;
+
+    // Project Independent Commands
+    if let Command::NewProject { name, force } = cmd {
+        new_project(name, force)?;
+        return Ok(());
+    } else if let Command::RemoveProject = cmd {
+        remove_project()?;
+        return Ok(());
+    }
+
+    let p = tutel::load_project_rec(&std::env::current_dir()?)?;
+
     //Run Commands
-    match command {
-        Command::Show => print_list(),
-        Command::NewProject { name, force } => new_project(name, force),
-        Command::AddTask { desc, completed } => add(desc, completed),
-        Command::MarkCompletion(completed, selector) => done(selector, completed),
-        Command::RemoveTask(selector) => remove(selector),
-        Command::EditTask(editor, index) => edit_task(index, editor),
-        Command::RemoveProject => remove_project(),
+    match cmd {
+        Command::Show => print_list(p),
+        Command::AddTask { desc, completed } => add(p, desc, completed),
+        Command::MarkCompletion(completed, selector) => done(p, selector, completed),
+        Command::RemoveTask(selector) => remove(p, selector),
+        Command::EditTask(editor, index) => edit_task(p, index, editor),
+        _ => unreachable!(),
     }
 }
 
-fn print_list() -> Result<()> {
-    let p = tutel::load_project_rec(&std::env::current_dir()?)?;
+fn print_list(p: Project) -> Result<()> {
     println!("{}", stringify_project(&p));
 
     Ok(())
 }
 
-fn add(desc: String, completed: bool) -> Result<()> {
-    let mut p = tutel::load_project_rec(&std::env::current_dir()?)?;
+fn add(mut p: Project, desc: String, completed: bool) -> Result<()> {
     p.add(desc, completed);
     p.save()?;
     Ok(())
 }
 
-fn done(selector: TaskSelector, completed: bool) -> Result<()> {
-    let mut p = tutel::load_project_rec(&std::env::current_dir()?)?;
-
+fn done(mut p: Project, selector: TaskSelector, completed: bool) -> Result<()> {
     match selector {
         TaskSelector::Indexed(indices) => {
             for index in indices {
@@ -71,9 +79,7 @@ fn done(selector: TaskSelector, completed: bool) -> Result<()> {
     Ok(())
 }
 
-fn remove(selector: TaskSelector) -> Result<()> {
-    let mut p = tutel::load_project_rec(&std::env::current_dir()?)?;
-
+fn remove(mut p: Project, selector: TaskSelector) -> Result<()> {
     match selector {
         TaskSelector::Indexed(indices) => {
             for index in indices {
@@ -95,9 +101,8 @@ fn remove_project() -> Result<()> {
     fs::remove_file(p.path).context("could not delete project file")
 }
 
-fn edit_task(index: usize, editor: String) -> Result<()> {
-    let mut project = tutel::load_project_rec(&std::env::current_dir()?)?;
-    let task = project.get_task_mut(index)?;
+fn edit_task(mut p: Project, index: usize, editor: String) -> Result<()> {
+    let task = p.get_task_mut(index)?;
 
     let mut tmpfile = NamedTempFile::new()?;
     tmpfile.write_all(task.desc.as_bytes())?;
@@ -114,7 +119,7 @@ fn edit_task(index: usize, editor: String) -> Result<()> {
     let new = fs::read_to_string(tmpfile.path())?;
     task.desc = new.replace('\n', " ");
 
-    project.save()?;
+    p.save()?;
 
     Ok(())
 }
@@ -174,7 +179,7 @@ fn stringify_project(project: &Project) -> String {
 
     let headline = format!(
         "{}{}{}{} {}",
-        '['.yellow().bold(), 
+        '['.yellow().bold(),
         marker,
         ']'.yellow().bold(),
         steps,
