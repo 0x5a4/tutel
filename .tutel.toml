@@ -1,0 +1,26 @@
+name = 'tutel'
+
+[[tasks]]
+desc = 'reset indices'
+completed = false
+index = 10
+
+[[tasks]]
+desc = 'todo.txt compat?'
+completed = false
+index = 14
+
+[[tasks]]
+desc = 'bring back tnav'
+completed = false
+index = 15
+
+[[tasks]]
+desc = 'sub categories through sub dirs'
+completed = false
+index = 16
+
+[[tasks]]
+desc = 'due dates'
+completed = false
+index = 19
