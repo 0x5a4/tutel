@@ -15,11 +15,11 @@ pub use project::{Project, Task};
 
 pub const PROJECT_FILE_NAME: &str = ".tutel.toml";
 
-/// Creates a new empty Project in the given directory
+/// Creates a new empty Project in the current directory
 pub fn new_project(name: String) -> Result<Project> {
     let dir = std::env::current_dir()?;
     let path = dir.join(PROJECT_FILE_NAME);
-    let mut project = Project::new(path, 0, name);
+    let mut project = Project::new(path, 0, name, 0);
 
     project.save()?;
 
