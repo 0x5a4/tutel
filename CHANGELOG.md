@@ -1,3 +1,6 @@
+# 0.2.9
+- fixed `tutel add` always adding 'what' instead of the real thing
+
 # 0.2.8
 More of a maintenance release, focusing on cleanup and very minor improvements.
 
