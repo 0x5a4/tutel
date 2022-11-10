@@ -2,6 +2,7 @@ use bpaf::{construct, env, long, positional, short, OptionParser, Parser};
 
 /// Indicates what Task(s) to select
 #[derive(Debug, Clone)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 pub enum TaskSelector {
     Indexed(Vec<usize>),
     All,
@@ -10,6 +11,7 @@ pub enum TaskSelector {
 
 /// The command to execute
 #[derive(Debug, Clone)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 pub enum Command {
     Show,
     NewProject { name: Option<String>, force: bool },
@@ -200,4 +202,145 @@ fn edit_task_command() -> OptionParser<Command> {
     construct!(Command::EditTask(editor, index))
         .to_options()
         .descr("edit an existing task. aliases: e")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parser, Command, TaskSelector};
+    use bpaf::Args;
+
+    #[test]
+    fn no_args() {
+        let app = parser().run_inner(Args::from(&[])).unwrap();
+
+        assert_eq!(app.cmd, Command::Show);
+    }
+
+    #[test]
+    fn new_project() {
+        let parser = parser();
+
+        assert_eq!(
+            parser.run_inner(Args::from(&["new"])).unwrap().cmd,
+            Command::NewProject {
+                name: None,
+                force: false
+            }
+        );
+
+        assert_eq!(
+            parser
+                .run_inner(Args::from(&["new", "--force"]))
+                .unwrap()
+                .cmd,
+            Command::NewProject {
+                name: None,
+                force: true
+            }
+        );
+
+        assert_eq!(
+            parser.run_inner(Args::from(&["new", "test"])).unwrap().cmd,
+            Command::NewProject {
+                name: Some(String::from("test")),
+                force: false
+            }
+        );
+    }
+
+    #[test]
+    fn add_task() {
+        let parser = parser();
+
+        assert_eq!(
+            parser
+                .run_inner(Args::from(&["add", "test", "not", "what"]))
+                .unwrap()
+                .cmd,
+            Command::AddTask {
+                desc: String::from("test not what"),
+                completed: false
+            },
+        );
+
+        assert_eq!(
+            parser
+                .run_inner(Args::from(&["add", "test", "-c"]))
+                .unwrap()
+                .cmd,
+            Command::AddTask {
+                desc: String::from("test"),
+                completed: true
+            },
+        );
+    }
+
+    #[test]
+    fn task_completed() {
+        let parser = parser();
+
+        assert_eq!(
+            parser
+                .run_inner(Args::from(&["done", "--all", "-!"]))
+                .unwrap()
+                .cmd,
+            Command::MarkCompletion(false, TaskSelector::All)
+        );
+        assert_eq!(
+            parser
+                .run_inner(Args::from(&["done", "4", "2", "42"]))
+                .unwrap()
+                .cmd,
+            Command::MarkCompletion(true, TaskSelector::Indexed(vec![4, 2, 42]))
+        );
+    }
+
+    #[test]
+    fn remove_task() {
+        let parser = parser();
+
+        assert_eq!(
+            parser.run_inner(Args::from(&["rm", "-c"])).unwrap().cmd,
+            Command::RemoveTask(TaskSelector::Completed)
+        );
+
+        assert_eq!(
+            parser
+                .run_inner(Args::from(&["rm", "4", "2", "42"]))
+                .unwrap()
+                .cmd,
+            Command::RemoveTask(TaskSelector::Indexed(vec![4, 2, 42]))
+        );
+    }
+
+    #[test]
+    fn edit_task() {
+        let parser = parser();
+
+        assert_eq!(
+            parser
+                .run_inner(Args::from(&["edit", "42", "--editor", "nvim"]))
+                .unwrap()
+                .cmd,
+            Command::EditTask(String::from("nvim"), 42)
+        );
+    }
+
+    #[test]
+    fn remove_project() {
+        let parser = parser();
+        
+        assert_eq!(
+            parser
+                .run_inner(Args::from(&["rm", "--project"]))
+                .unwrap()
+                .cmd,
+            Command::RemoveProject
+        );
+    }
+
+    #[test]
+    fn bpaf_invariants() {
+        parser().check_invariants(true);
+    }
 }

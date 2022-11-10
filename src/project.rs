@@ -118,6 +118,7 @@ impl Project {
         for t in &self.data.tasks {
             if t.index > highest {
                 highest = t.index;
+
             }
         }
 
@@ -154,3 +155,29 @@ impl Task {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::{Project, Task};
+
+    #[test]
+    fn next_index() {
+        let mut project = Project::new(PathBuf::new(), 0, String::from("dummy"));
+        project.data.tasks.push(Task::new("a", false, 5));
+        project.data.tasks.push(Task::new("a", false, 16));
+
+        assert_eq!(project.next_index(), 17);
+    }
+
+    #[test]
+    fn wrap_index() {
+        let mut project = Project::new(PathBuf::new(), 0, String::from("dummy"));
+        project.data.tasks.push(Task::new("a", false, 999));
+        project.data.tasks.push(Task::new("a", false, 3));
+
+        assert_eq!(project.next_index(), 0);
+    }
+}
+    
