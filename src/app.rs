@@ -89,7 +89,7 @@ fn add_task_command() -> OptionParser<Command> {
                     desc.push(' ');
                 }
             }
-            "what".to_string()
+            desc
         });
 
     let completed = short('c')
