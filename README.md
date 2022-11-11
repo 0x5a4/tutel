@@ -3,7 +3,7 @@ a minimalistic todo app trying to integrate with your existing workflow.
 
 ## What is this?
 `tutel` is built upon a simple principle: **One Todo-List per directory.**  
-Why? Because you (propably) already have some kind of directory based
+Why? Because you (probably) already have some kind of directory based
 organization, so there really is no need for your todo app to redo it.  
 Run it and `tutel` will either use the todo list(saved in a `.tutel.toml` file) from
 your current directory or search upwards until one is found. 
@@ -16,7 +16,6 @@ your current directory or search upwards until one is found.
 - [X] Remove all completed todos
 - [X] Consistent Indices of Todos across removals
 - [ ] Due dates
-- [X] Really ugly list visualization that needs improvement(Help me [pls](https://github.com/0x5a4/tutel/issues/2))
 - [X] Shell completions
 
 ## Installation
