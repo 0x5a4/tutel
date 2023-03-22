@@ -24,3 +24,18 @@ index = 16
 desc = 'due dates'
 completed = false
 index = 19
+
+[[tasks]]
+desc = 'edit completion is borked'
+completed = true
+index = 20
+
+[[tasks]]
+desc = 'auto migration'
+completed = false
+index = 21
+
+[[tasks]]
+desc = 'tests proper'
+completed = false
+index = 22

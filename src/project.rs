@@ -118,7 +118,6 @@ impl Project {
         for t in &self.data.tasks {
             if t.index > highest {
                 highest = t.index;
-
             }
         }
 
@@ -180,4 +179,3 @@ mod tests {
         assert_eq!(project.next_index(), 0);
     }
 }
-    

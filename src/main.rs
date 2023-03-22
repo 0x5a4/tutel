@@ -33,7 +33,7 @@ fn run_app(app: App) -> Result<()> {
     if let Command::NewProject { name, force } = cmd {
         new_project(name, force)?;
         return Ok(());
-    } else if let Command::RemoveProject = cmd {
+    } else if cmd == Command::RemoveProject {
         remove_project()?;
         return Ok(());
     }

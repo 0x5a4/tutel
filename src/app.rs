@@ -1,8 +1,7 @@
 use bpaf::{construct, env, long, positional, short, OptionParser, Parser};
 
 /// Indicates what Task(s) to select
-#[derive(Debug, Clone)]
-#[cfg_attr(test, derive(PartialEq, Eq))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TaskSelector {
     Indexed(Vec<usize>),
     All,
@@ -10,8 +9,7 @@ pub enum TaskSelector {
 }
 
 /// The command to execute
-#[derive(Debug, Clone)]
-#[cfg_attr(test, derive(PartialEq, Eq))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     Show,
     NewProject { name: Option<String>, force: bool },
@@ -143,6 +141,22 @@ fn remove_task_command() -> OptionParser<Command> {
         .descr("remove a task from a project")
 }
 
+fn edit_task_command() -> OptionParser<Command> {
+    let index = positional("index")
+        .complete(complete_index)
+        .parse(|v: String| v.parse::<usize>());
+
+    let editor = env("EDITOR")
+        .short('e')
+        .long("editor")
+        .help("the editor to use (default: $EDITOR)")
+        .argument("editor");
+
+    construct!(Command::EditTask(editor, index))
+        .to_options()
+        .descr("edit an existing task. aliases: e")
+}
+
 fn complete_indices(input: &Vec<String>) -> Vec<(String, Option<String>)> {
     let workdir = match std::env::current_dir() {
         Ok(x) => x,
@@ -165,7 +179,31 @@ fn complete_indices(input: &Vec<String>) -> Vec<(String, Option<String>)> {
             continue;
         }
         if tid.starts_with(active) {
-            res.push((format!("{}", task.index), Some(task.desc.clone())));
+            res.push((tid, Some(task.desc.clone())));
+        }
+    }
+
+    res
+}
+
+fn complete_index(input: &String) -> Vec<(String, Option<String>)> {
+    let workdir = match std::env::current_dir() {
+        Ok(x) => x,
+        Err(_) => return Vec::new(),
+    };
+
+    let p = match tutel::load_project_rec(&workdir) {
+        Ok(x) => x,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut res = Vec::new();
+    let input_string = input.to_string();
+
+    for task in p.data.tasks {
+        let tid = task.index.to_string();
+        if tid.starts_with(&input_string) {
+            res.push((tid, Some(task.desc.clone())))
         }
     }
 
@@ -188,20 +226,6 @@ fn parse_indices() -> impl Parser<TaskSelector> {
 
             Ok(TaskSelector::Indexed(indices))
         })
-}
-
-fn edit_task_command() -> OptionParser<Command> {
-    let index = positional::<usize>("index");
-
-    let editor = env("EDITOR")
-        .short('e')
-        .long("editor")
-        .help("the editor to use (default: $EDITOR)")
-        .argument("editor");
-
-    construct!(Command::EditTask(editor, index))
-        .to_options()
-        .descr("edit an existing task. aliases: e")
 }
 
 #[cfg(test)]
@@ -329,7 +353,7 @@ mod tests {
     #[test]
     fn remove_project() {
         let parser = parser();
-        
+
         assert_eq!(
             parser
                 .run_inner(Args::from(&["rm", "--project"]))
