@@ -1,3 +1,6 @@
+# 0.2.10
+- autocomplete for the 'edit' command
+
 # 0.2.9
 - fixed `tutel add` always adding 'what' instead of the real thing
 
