@@ -15,11 +15,11 @@ pub struct Project {
 
 impl Project {
     /// Creates a new project with no tasks
-    pub const fn new(project_file: PathBuf, steps: usize, name: String) -> Self {
+    pub fn new(project_file: PathBuf, steps: usize, name: impl ToString) -> Self {
         Self {
             path: project_file,
             data: ProjectData {
-                name,
+                name: name.to_string(),
                 tasks: Vec::new(),
             },
             steps,
@@ -71,10 +71,10 @@ impl Project {
         bail!("no task with index {}", &index)
     }
 
-    pub fn add(&mut self, name: String, completed: bool) {
+    pub fn add(&mut self, name: impl ToString, completed: bool) {
         self.data
             .tasks
-            .push(Task::new(name, completed, self.next_index()))
+            .push(Task::new(name.to_string(), completed, self.next_index()))
     }
 
     pub fn remove(&mut self, index: usize) {
@@ -138,7 +138,7 @@ pub struct ProjectData {
 }
 
 /// A completable Task within a Project
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Task {
     pub desc: String,
     pub index: usize,
@@ -156,10 +156,88 @@ impl Task {
 }
 
 #[cfg(test)]
+#[allow(clippy::missing_const_for_fn)]
 mod tests {
-    use std::path::PathBuf;
+    use std::{io::Write, path::PathBuf};
+    use tempfile::NamedTempFile;
 
     use super::{Project, Task};
+
+    #[test]
+    fn load() {
+        let mut tmpfile = NamedTempFile::new().expect("unable to create tmpfile");
+        write!(
+            tmpfile,
+            r#"
+            name = 'testproject'
+
+            [[tasks]]
+            desc = 'testtask'
+            completed = true
+            index = 67
+
+            [[tasks]]
+            desc = 'moretest'
+            completed = false
+            index = 99
+               "#
+        )
+        .expect("unable to write tmpfile");
+
+        let project =
+            Project::load(tmpfile.path().to_path_buf(), 0).expect("unable to load project");
+
+        assert_eq!(project.data.name, "testproject");
+        assert_eq!(
+            project.data.tasks,
+            vec![
+                Task::new("testtask", true, 67),
+                Task::new("moretest", false, 99),
+            ]
+        )
+    }
+
+    #[test]
+    fn save() {
+        let tmpfile = NamedTempFile::new().expect("unable to create tmpfile");
+
+        let mut project =
+            Project::new(tmpfile.path().to_path_buf(), 0, "testproject");
+
+        project.add("hypa hypa", false);
+        project.add("HYPA HYPA", true);
+
+        project.save().expect("unable to save project")
+    }
+
+    #[test]
+    fn remove_task() {
+        let mut project = Project::new(PathBuf::from("/invalid/path"), 0, "testproject");
+
+        project.add("iam", false);
+        project.add("root", true);
+
+        project.remove(0);
+
+        assert!(project.get_task_mut(0).is_err());
+        assert_eq!(project.next_index(), 2);
+    }
+
+    #[test]
+    fn remove_all_completed() {
+        let mut project = Project::new(PathBuf::from("/invalid/path"), 0, "testproject");
+
+        project.add("never", true);
+        project.add("gonna", false);
+        project.add("give", false);
+        project.add("you", true);
+        project.add("up", false);
+
+        project.remove_completed();
+
+        assert!(project.get_task_mut(0).is_err());
+        assert!(project.get_task_mut(3).is_err());
+    }
 
     #[test]
     fn next_index() {
