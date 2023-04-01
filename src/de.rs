@@ -5,11 +5,12 @@ use serde::{
 
 use super::{project::ProjectData, Task};
 
-const PROJECT_DATA_FIELDS: &[&str] = &["name", "tasks"];
+const PROJECT_DATA_FIELDS: &[&str] = &["name", "tasks", "is_child"];
 
 enum ProjectDataField {
     Name,
     Tasks,
+    IsChild,
 }
 
 struct ProjectDataFieldVisitor;
@@ -18,7 +19,7 @@ impl<'de> Visitor<'de> for ProjectDataFieldVisitor {
     type Value = ProjectDataField;
 
     fn expecting(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        fmt.write_str("'name' or 'tasks'")
+        fmt.write_str("'name' or 'tasks' or 'is_child")
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -28,6 +29,7 @@ impl<'de> Visitor<'de> for ProjectDataFieldVisitor {
         match v {
             "name" => Ok(ProjectDataField::Name),
             "tasks" => Ok(ProjectDataField::Tasks),
+            "is_child" => Ok(ProjectDataField::IsChild),
             _ => Err(de::Error::unknown_field(v, PROJECT_DATA_FIELDS)),
         }
     }
@@ -57,6 +59,7 @@ impl<'de> Visitor<'de> for ProjectDataVisitor {
     {
         let mut name = None;
         let mut tasks = None;
+        let mut is_child = None;
         while let Some(key) = map.next_key()? {
             match key {
                 ProjectDataField::Name => {
@@ -71,13 +74,24 @@ impl<'de> Visitor<'de> for ProjectDataVisitor {
                     }
                     tasks = Some(map.next_value()?);
                 }
+                ProjectDataField::IsChild => {
+                    if is_child.is_some() {
+                        return Err(de::Error::duplicate_field("is_child"));
+                    }
+                    is_child = Some(map.next_value()?);
+                }
             }
         }
 
         let name = name.ok_or_else(|| de::Error::missing_field("name"))?;
         let tasks = tasks.ok_or_else(|| de::Error::missing_field("tasks"))?;
+        let is_child = is_child.unwrap_or(false);
 
-        Ok(ProjectData { name, tasks })
+        Ok(ProjectData {
+            name,
+            tasks,
+            is_child,
+        })
     }
 }
 
